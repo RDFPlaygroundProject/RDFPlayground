@@ -1,0 +1,61 @@
+{
+  "name": "odin",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve --port 9080",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "@egjs/hammerjs": "^2.0.17",
+    "core-js": "^3.6.5",
+    "keycharm": "^0.3.1",
+    "moment": "^2.25.3",
+    "uuid": "^7.0.3",
+    "vis": "^4.21.0-EOL",
+    "vis-data": "^6.5.3",
+    "vis-network": "^7.6.9",
+    "vis-util": "^4.0.0",
+    "vue-vis-network": "^1.0.2",
+    "vue": "^2.6.11",
+    "vuetify": "^2.2.32"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~4.3.1",
+    "@vue/cli-plugin-eslint": "~4.3.1",
+    "@vue/cli-service": "~4.3.1",
+    "@vue/cli": "~4.3.1",
+    "babel-eslint": "^10.0.3",
+    "eslint": "^6.7.2",
+    "eslint-plugin-vue": "^6.1.2",
+    "sass": "^1.19.0",
+    "sass-loader": "^8.0.0",
+    "vue-cli-plugin-vuetify": "~2.0.5",
+    "vue-template-compiler": "^2.6.11",
+    "vuetify-loader": "^1.4.3"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions"
+  ],
+  "description": "## Project setup ``` npm install ```",
+  "main": "babel.config.js",
+  "keywords": [],
+  "author": "Bastian Inostroza",
+  "license": "Apache License v2.0"
+}

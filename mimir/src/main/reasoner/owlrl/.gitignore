@@ -1,0 +1,20 @@
+# Jetbrains editors
+.idea/
+
+* Python
+*.pyc
+.pytest_cache/
+# 2to3
+*.bak
+
+/venv/
+
+docs/build/
+
+build/
+dist/
+deb_dist/
+sdist/
+*.egg-info/
+
+owlrl*.tar.gz
