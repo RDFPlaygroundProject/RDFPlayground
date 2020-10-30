@@ -451,7 +451,7 @@
                   v-model="shex_text_shape"
                   counter
                   name="shex_text"
-                  label="Write you shape rules here"
+                  label="Write your shape rules here"
                   hint=":user { ... }"
                 />
               </v-card-text>
