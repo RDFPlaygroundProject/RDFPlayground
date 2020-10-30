@@ -656,15 +656,18 @@
             </v-card>
           </v-dialog>
 
-          <!--v-btn
-            class="ma-1 mb-0 left white--text"
-            rounded
-            color="white"
-            text
-            disabled
-          >
-            Wiew on <v-icon>mdi-github</v-icon>
-          </v-btn -->
+          <a href="https://github.com/BastyZ/RDFPlayground" target="_blank">
+            <v-btn
+              class="ma-1 mb-0 lighten-4 left white--text"
+              rounded
+              outlined
+              dark
+              color="white"
+              text
+            >
+              Wiew on <v-icon class="ml-1">mdi-github</v-icon>
+            </v-btn>
+          </a>
 
           <v-col
             class="primary py-2 text-center white--text"
