@@ -53,17 +53,6 @@
           <v-tab-item value="tab-graph-text">
             <v-card flat tile class="pb-0 pt-0">
               <v-card-text class="pb-0 pl-0">
-                <!--v-textarea
-                  class="monospaced-area"
-                  v-model="graph_text"
-                  :disabled="graph_text_disabled"
-                  counter
-                  rows="15"
-                  name="graph_text"
-                  label="Describe a graph here using Turtle (ttl)"
-                  hint="@prefix : <http://example.org/> ."
-                  v-on:input="checkSyntaxColorReset"
-                ></v-textarea-->
                 <v-lined-textarea
                   v-model="graph_text"
                   :nowrap="false"
@@ -136,16 +125,6 @@
           <v-tab-item value="tdb-text">
             <v-card flat tile max-height="600" class="pb-0 pt-0">
               <v-card-text class="pb-0">
-                <!--v-textarea
-                  class="monospaced-area"
-                  v-model="this.tdb_text"
-                  label="TDB graph (Turtle)"
-                  readonly
-                  rows="15"
-                  no-resize
-                  outlined
-                  v-scroll
-                ></v-textarea-->
                 <v-lined-textarea
                   v-model="this.tdb_text"
                   label="TDB graph (Turtle)"
@@ -295,15 +274,6 @@
           <v-tab-item value="tab-sparql">
             <v-card flat tile class="mb-0">
               <v-card-text>
-                <!--v-textarea
-                    class="mb-0 monospaced-area"
-                    rows="10"
-                    v-model="sparql_text"
-                    counter
-                    name="sparql_text"
-                    label="Query your graph..."
-                    hint="SELECT * where {...}"
-                ></v-textarea-->
                 <v-lined-textarea
                   class="monospaced-area"
                   v-model="sparql_text"
@@ -391,15 +361,6 @@
           <v-tab-item value="tab-owl">
             <v-card flat tile class="mb-0">
               <v-card-text>
-                <!--v-textarea
-                  class="mb-0 monospaced-area"
-                  rows="10"
-                  v-model="owl_text"
-                  counter
-                  name="owl_text"
-                  label="OPTIONAL: You can write reasoner specific triples here using Turtle (ttl)"
-                  hint=":x rdfs:subPropertyOf :y ."
-                ></v-textarea-->
                 <v-lined-textarea
                   v-model="owl_text"
                   class="mb-0 monospaced-area"
@@ -448,15 +409,6 @@
           <v-tab-item value="tab-shacl">
             <v-card flat tile class="mb-0">
               <v-card-text>
-                <!--v-textarea
-                  class="mb-0 monospaced-area"
-                  rows="12"
-                  v-model="shacl_text_shape"
-                  counter
-                  name="shacl_text"
-                  label="Write your shape rules here (graph prefixes do not apply)"
-                  hint=":UserShape a sh:NodeShape;"
-                ></v-textarea-->
                 <v-lined-textarea
                   class="mb-0 monospaced-area"
                   rows="12"
@@ -493,15 +445,6 @@
           <v-tab-item value="tab-shex">
             <v-card flat tile class="mb-0">
               <v-card-text>
-                <!--v-textarea
-                  class="mb-0 monospaced-area"
-                  rows="8"
-                  v-model="shex_text_shape"
-                  counter
-                  name="shex_text"
-                  label="Write you shape rules here"
-                  hint=":user { ... }"
-                ></v-textarea-->
                 <v-lined-textarea
                   class="mb-0 monospaced-area"
                   rows="8"
@@ -619,15 +562,6 @@
                       Result
                     </v-card-title>
                     <v-card-text class="text-left" ref="result_text">
-                      <!--v-textarea
-                        class="monospaced-area"
-                        v-model="result_text"
-                        :row-height="16"
-                        flat
-                        solo
-                        auto-grow
-                        disabled
-                      /-->
                       <v-lined-textarea
                         class="monospaced-area"
                         v-model="result_text"
