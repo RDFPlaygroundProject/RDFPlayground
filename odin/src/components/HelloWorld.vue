@@ -756,7 +756,7 @@
   import vis from 'vis';
   import VLinedTextarea from "./VLinedTextarea";
 
-  const backAPI = "localhost:9060";
+  const backAPI = "rdfplayground.dcc.uchile.cl";
 
   const MimeTypes = {
       "Text": "text/plain ;charset=utf-8",
