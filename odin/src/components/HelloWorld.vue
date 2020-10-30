@@ -37,15 +37,37 @@
             See the graph as:
           </v-tab>
 
-          <v-tab href="#tab-graph-text">
-            Text
-            <v-icon>mdi-text-subject</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-graph-text"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Text
+                <v-icon>mdi-text-subject</v-icon>
+              </v-tab>
+            </template>
+            <span>Text</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-graph-graph" @click="checkSyntax">
-            Graph
-            <v-icon>mdi-share-variant</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-graph-graph"
+                @click="checkSyntax"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Graph
+                <v-icon>mdi-share-variant</v-icon>
+              </v-tab>
+            </template>
+            <span>
+              <!-- Modify text here -->
+              Graph
+            </span>
+          </v-tooltip>
         </v-tabs>
 
         <!-- Tab Contents -->
@@ -119,7 +141,7 @@
             <v-icon>mdi-share-variant</v-icon>
           </v-tab>
         </v-tabs>
-
+tab
         <!-- Tab Contents -->
         <v-tabs-items v-model="tdb_tab" v-bind:style="styleObject.tabItem">
           <v-tab-item value="tdb-text">
@@ -162,14 +184,26 @@
           width="600"
         >
           <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              class="primary accent-4 mr-2 mb-3 left white--text"
-              dark
+            <v-tooltip
+              right
               v-bind="attrs"
               v-on="on"
             >
-              <v-icon left>mdi-magnify</v-icon> prefix lookup
-            </v-btn>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                  class="primary accent-4 mr-2 mb-3 left white--text"
+                  dark
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  <v-icon left>mdi-magnify</v-icon> prefix lookup
+                </v-btn>
+              </template>
+              <span>
+                <!-- Modify text here -->
+                Graph
+              </span>
+            </v-tooltip>
           </template>
 
           <v-card>
@@ -247,25 +281,64 @@
           <v-tabs-slider></v-tabs-slider>
 
           <!-- Tab Titles -->
-          <v-tab href="#tab-sparql">
-            Sparql
-            <v-icon>mdi-database-search</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-sparql"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Sparql
+                <v-icon>mdi-database-search</v-icon>
+              </v-tab>
+            </template>
+            <span>Sparql</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-owl" :disabled="graph_text_disabled">
-            Owl
-            <v-icon>mdi-owl</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-owl"
+                :disabled="graph_text_disabled"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Owl
+                <v-icon>mdi-owl</v-icon>
+              </v-tab>
+            </template>
+            <span>Owl</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-shacl" :disabled="graph_text_disabled">
-            SHACL
-            <v-icon>mdi-eye-check-outline</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-shacl"
+                :disabled="graph_text_disabled"
+                v-bind="attrs"
+                v-on="on"
+              >
+                SHACL
+                <v-icon>mdi-eye-check-outline</v-icon>
+              </v-tab>
+            </template>
+            <span>SHACL</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-shex" :disabled="graph_text_disabled">
-            ShEx
-            <v-icon>mdi-code-tags-check</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-shex"
+                :disabled="graph_text_disabled"
+                v-bind="attrs"
+                v-on="on"
+              >
+                ShEx
+                <v-icon>mdi-code-tags-check</v-icon>
+              </v-tab>
+            </template>
+            <span>ShEx</span>
+          </v-tooltip>
         </v-tabs>
 
         <!-- Tab Contents -->
