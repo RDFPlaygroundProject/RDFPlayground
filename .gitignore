@@ -110,6 +110,8 @@ buildNumber.properties
 hs_err_pid*
 
 # temp files
-mimir/src/main/reasoner/temp/*
+mimir/src/main/reasoner/temp/*.ttl
 mimir/src/main/shex/temp/*
 mimir/src/main/resources/tdb/*
+/.idea/
+/mimir/linkeddata.iml
