@@ -665,7 +665,7 @@
               color="white"
               text
             >
-              Wiew on <v-icon class="ml-1">mdi-github</v-icon>
+              View on <v-icon class="ml-1">mdi-github</v-icon>
             </v-btn>
           </a>
 
