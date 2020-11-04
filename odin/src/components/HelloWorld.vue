@@ -537,7 +537,7 @@
                   v-model="shex_text_shape"
                   counter
                   name="shex_text"
-                  label="Write you shape rules here"
+                  label="Write your shape rules here"
                   hint=":user { ... }"
                 />
               </v-card-text>
@@ -751,7 +751,7 @@
               color="white"
               text
             >
-              Wiew on <v-icon class="ml-1">mdi-github</v-icon>
+              View on <v-icon class="ml-1">mdi-github</v-icon>
             </v-btn>
           </a>
 
@@ -1011,6 +1011,7 @@
         this.sparql_text = this.aboutSparql;
         this.sparql_operation_selected='SELECT';
         this.sparqlSwitchFormat(this.sparql_operation_selected);
+        this.graph_text_disabled = false;
         this.owl_text = this.aboutOwl;
         this.owl_type_selected='OWL';
         this.shacl_text_shape = this.aboutShacl;
