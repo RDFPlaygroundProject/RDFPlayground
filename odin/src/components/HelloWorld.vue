@@ -140,7 +140,7 @@
             <v-icon>mdi-share-variant</v-icon>
           </v-tab>
         </v-tabs>
-tab
+
         <!-- Tab Contents -->
         <v-tabs-items v-model="tdb_tab" v-bind:style="styleObject.tabItem">
           <v-tab-item value="tdb-text">
