@@ -925,6 +925,7 @@
         this.sparql_text = this.aboutSparql;
         this.sparql_operation_selected='SELECT';
         this.sparqlSwitchFormat(this.sparql_operation_selected);
+        this.graph_text_disabled = false;
         this.owl_text = this.aboutOwl;
         this.owl_type_selected='OWL';
         this.shacl_text_shape = this.aboutShacl;
