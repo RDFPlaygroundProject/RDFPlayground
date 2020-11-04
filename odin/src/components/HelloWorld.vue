@@ -48,7 +48,7 @@
                 <v-icon>mdi-text-subject</v-icon>
               </v-tab>
             </template>
-            <span>Text</span>
+            <span>Enter your RDF data in Turtle syntax.</span>
           </v-tooltip>
 
           <v-tooltip bottom>
@@ -64,8 +64,7 @@
               </v-tab>
             </template>
             <span>
-              <!-- Modify text here -->
-              Graph
+              View your RDF data as a graph.
             </span>
           </v-tooltip>
         </v-tabs>
@@ -185,7 +184,7 @@ tab
         >
           <template v-slot:activator="{ on, attrs }">
             <v-tooltip
-              right
+              top
               v-bind="attrs"
               v-on="on"
             >
@@ -195,13 +194,13 @@ tab
                   dark
                   v-bind="attrs"
                   v-on="on"
+                  v-on:click="prefixcc_dialog = true"
                 >
                   <v-icon left>mdi-magnify</v-icon> prefix lookup
                 </v-btn>
               </template>
               <span>
-                <!-- Modify text here -->
-                Graph
+                 Look up a common prefix string to add to your data, graph, query, etc.
               </span>
             </v-tooltip>
           </template>
@@ -292,7 +291,7 @@ tab
                 <v-icon>mdi-database-search</v-icon>
               </v-tab>
             </template>
-            <span>Sparql</span>
+            <span>Specify a SPARQL query to run on the RDF data you have entered.</span>
           </v-tooltip>
 
           <v-tooltip bottom>
@@ -307,7 +306,7 @@ tab
                 <v-icon>mdi-owl</v-icon>
               </v-tab>
             </template>
-            <span>Owl</span>
+            <span>Specify some axioms in RDFS/OWL to run reasoning over the RDF data.</span>
           </v-tooltip>
 
           <v-tooltip bottom>
@@ -322,7 +321,7 @@ tab
                 <v-icon>mdi-eye-check-outline</v-icon>
               </v-tab>
             </template>
-            <span>SHACL</span>
+            <span>Specify constraints in SHACL to validate the RDF graph.</span>
           </v-tooltip>
 
           <v-tooltip bottom>
@@ -337,7 +336,7 @@ tab
                 <v-icon>mdi-code-tags-check</v-icon>
               </v-tab>
             </template>
-            <span>ShEx</span>
+            <span>Specify constraints in ShEx to validate the RDF graph.</span>
           </v-tooltip>
         </v-tabs>
 
@@ -412,7 +411,21 @@ tab
               >
                 Query TDB
               </v-btn>
-              <v-btn class="ma-2" @click.prevent="sparqlFieldReset" color="primary">Reset</v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    class="ma-2"
+                    color="primary"
+                    dark
+                    v-bind="attrs"
+                    v-on="on"
+                    @click.prevent="sparqlFieldReset"
+                  >
+                    Reset
+                  </v-btn>
+                </template>
+                <span>Returns the SPARQL Query field to the default value.</span>
+              </v-tooltip>
               <v-switch
                 v-if="!sparql_alert"
                 v-model="graph_text_disabled"
@@ -1292,7 +1305,10 @@ tab
       },
       sparqlFieldReset: function () {
         // Changes text to the original selection
-        this.sparql_text = "SELECT * WHERE {?s ?p ?o} LIMIT 10";
+        this.sparql_text = "PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                "PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "\n" +
+                "SELECT * WHERE {?s ?p ?o} LIMIT 10";
       },
       sparqlShowAlert: function (message) {
         // Shows an alert on the buttons row
