@@ -123,7 +123,7 @@
                     </v-btn>
                     <v-toolbar-title>Graph Visualization</v-toolbar-title>
                     <v-spacer></v-spacer>
-                    <v-toolbar-title class="hidden-sm-and-down">Save as image using left click over the visualization</v-toolbar-title>
+                    <v-toolbar-title class="hidden-sm-and-down">Save as image using secondary (right) click over the visualization</v-toolbar-title>
                   </v-toolbar>
                   <vis-network ref="visNetworkGraph"
                     v-bind:style="styleObject.dotFullScreenContainer"
@@ -246,7 +246,7 @@
                     <v-toolbar-title>TDB visualization</v-toolbar-title>
                     <v-spacer></v-spacer>
                     <v-toolbar-title class="hidden-sm-and-down">
-                      Save as image using left click over the visualization
+                      Save as image using secondary (right) click over the visualization
                     </v-toolbar-title>
                   </v-toolbar>
                   <vis-network
