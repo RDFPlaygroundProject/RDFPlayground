@@ -37,15 +37,36 @@
             See the graph as:
           </v-tab>
 
-          <v-tab href="#tab-graph-text">
-            Text
-            <v-icon>mdi-text-subject</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-graph-text"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Text
+                <v-icon>mdi-text-subject</v-icon>
+              </v-tab>
+            </template>
+            <span>Enter your RDF data in Turtle syntax.</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-graph-graph" @click="checkSyntax">
-            Graph
-            <v-icon>mdi-share-variant</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-graph-graph"
+                @click="checkSyntax"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Graph
+                <v-icon>mdi-share-variant</v-icon>
+              </v-tab>
+            </template>
+            <span>
+              View your RDF data as a graph.
+            </span>
+          </v-tooltip>
         </v-tabs>
 
         <!-- Tab Contents -->
@@ -251,14 +272,26 @@
           width="600"
         >
           <template v-slot:activator="{ on, attrs }">
-            <v-btn
-              class="primary accent-4 mr-2 mb-3 left white--text"
-              dark
+            <v-tooltip
+              top
               v-bind="attrs"
               v-on="on"
             >
-              <v-icon left>mdi-magnify</v-icon> prefix lookup
-            </v-btn>
+              <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                  class="primary accent-4 mr-2 mb-3 left white--text"
+                  dark
+                  v-bind="attrs"
+                  v-on="on"
+                  v-on:click="prefixcc_dialog = true"
+                >
+                  <v-icon left>mdi-magnify</v-icon> prefix lookup
+                </v-btn>
+              </template>
+              <span>
+                 Look up a common prefix string to add to your data, graph, query, etc.
+              </span>
+            </v-tooltip>
           </template>
 
           <v-card>
@@ -336,25 +369,64 @@
           <v-tabs-slider></v-tabs-slider>
 
           <!-- Tab Titles -->
-          <v-tab href="#tab-sparql">
-            Sparql
-            <v-icon>mdi-database-search</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-sparql"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Sparql
+                <v-icon>mdi-database-search</v-icon>
+              </v-tab>
+            </template>
+            <span>Specify a SPARQL query to run on the RDF data you have entered.</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-owl" :disabled="graph_text_disabled">
-            Owl
-            <v-icon>mdi-owl</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-owl"
+                :disabled="graph_text_disabled"
+                v-bind="attrs"
+                v-on="on"
+              >
+                Owl
+                <v-icon>mdi-owl</v-icon>
+              </v-tab>
+            </template>
+            <span>Specify some axioms in RDFS/OWL to run reasoning over the RDF data.</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-shacl" :disabled="graph_text_disabled">
-            SHACL
-            <v-icon>mdi-eye-check-outline</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-shacl"
+                :disabled="graph_text_disabled"
+                v-bind="attrs"
+                v-on="on"
+              >
+                SHACL
+                <v-icon>mdi-eye-check-outline</v-icon>
+              </v-tab>
+            </template>
+            <span>Specify constraints in SHACL to validate the RDF graph.</span>
+          </v-tooltip>
 
-          <v-tab href="#tab-shex" :disabled="graph_text_disabled">
-            ShEx
-            <v-icon>mdi-code-tags-check</v-icon>
-          </v-tab>
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                href="#tab-shex"
+                :disabled="graph_text_disabled"
+                v-bind="attrs"
+                v-on="on"
+              >
+                ShEx
+                <v-icon>mdi-code-tags-check</v-icon>
+              </v-tab>
+            </template>
+            <span>Specify constraints in ShEx to validate the RDF graph.</span>
+          </v-tooltip>
         </v-tabs>
 
         <!-- Tab Contents -->
@@ -428,7 +500,21 @@
               >
                 Query TDB
               </v-btn>
-              <v-btn class="ma-2" @click.prevent="sparqlFieldReset" color="primary">Reset</v-btn>
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    class="ma-2"
+                    color="primary"
+                    dark
+                    v-bind="attrs"
+                    v-on="on"
+                    @click.prevent="sparqlFieldReset"
+                  >
+                    Reset
+                  </v-btn>
+                </template>
+                <span>Returns the SPARQL Query field to the default value.</span>
+              </v-tooltip>
               <v-switch
                 v-if="!sparql_alert"
                 v-model="graph_text_disabled"
@@ -1318,7 +1404,10 @@
       },
       sparqlFieldReset: function () {
         // Changes text to the original selection
-        this.sparql_text = "SELECT * WHERE {?s ?p ?o} LIMIT 10";
+        this.sparql_text = "PREFIX rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
+                "PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>\n" +
+                "\n" +
+                "SELECT * WHERE {?s ?p ?o} LIMIT 10";
       },
       sparqlShowAlert: function (message) {
         // Shows an alert on the buttons row
