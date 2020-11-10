@@ -831,14 +831,61 @@
             </v-card>
           </v-dialog>
 
+          <v-dialog
+                  v-model="demo_dialog"
+                  persistent
+                  max-width="1290"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                      class="lighten-4 ma-1 mb-0 left white--text"
+                      dark
+                      rounded
+                      outlined
+                      text
+                      v-bind="attrs"
+                      v-on="on"
+              >
+                <v-icon class="mr-1">mdi-youtube</v-icon> Demo
+              </v-btn>
+            </template>
+            <v-card>
+              <v-card-title class="headline">
+              </v-card-title>
+              <v-card-text>
+                <div>
+                  <iframe
+                    class="v-responsive"
+                    width="1240"
+                    height="698"
+                    src="https://www.youtube.com/embed/g_Zdh_y-8Vc"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                  </iframe>
+                </div>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                        color="primary darken-1"
+                        text
+                        @click="demo_dialog = false"
+                >
+                  Close
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
           <a href="https://github.com/BastyZ/RDFPlayground" target="_blank">
             <v-btn
-              class="ma-1 mb-0 lighten-4 left white--text"
-              rounded
-              outlined
-              dark
-              color="white"
-              text
+                    class="ma-1 mb-0 lighten-4 left white--text"
+                    rounded
+                    outlined
+                    dark
+                    color="white"
+                    text
             >
               View on <v-icon class="ml-1">mdi-github</v-icon>
             </v-btn>
@@ -1014,6 +1061,7 @@
       prefixcc_result_error: false,
       graph_vis_dialog: false,
       tdb_vis_dialog: false,
+      demo_dialog: false,
       about_dialog: false,
       aboutLoading: false,
       aboutGraph: "@base   <http://ex.org/> .\n" +
