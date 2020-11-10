@@ -89,7 +89,51 @@
           </v-tab-item>
 
           <v-tab-item value="tab-graph-graph" v-bind:style="styleObject.tabItem">
-            <div ref="visNetworkGraph" v-bind:style="styleObject.dotContainer"></div>
+            <v-row class="ma-2 mb-1">
+              <div ref="visNetworkGraph" v-bind:style="styleObject.dotContainer"></div>
+            </v-row>
+            <v-row class="ma-2 mt-0 mb-10">
+              <v-dialog
+                v-model="graph_vis_dialog"
+                fullscreen
+                hide-overlay
+                transition="dialog-bottom-transition"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    color="primary"
+                    dark
+                    v-bind="attrs"
+                    v-on="on"
+                  >
+                    <v-icon>mdi-fullscreen</v-icon> View on Fullscreen
+                  </v-btn>
+                </template>
+                <v-card>
+                  <v-toolbar
+                    dark
+                    color="primary"
+                  >
+                    <v-btn
+                      icon
+                      dark
+                      @click="graph_vis_dialog = false"
+                    >
+                      <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                    <v-toolbar-title>Graph Visualization</v-toolbar-title>
+                    <v-spacer></v-spacer>
+                    <v-toolbar-title class="hidden-sm-and-down">Save as image using secondary (right) click over the visualization</v-toolbar-title>
+                  </v-toolbar>
+                  <vis-network ref="visNetworkGraph"
+                    v-bind:style="styleObject.dotFullScreenContainer"
+                     :nodes="graph_dot_vis.nodes"
+                     :edges="graph_dot_vis.edges"
+                     :options="this.options"
+                  />
+                </v-card>
+              </v-dialog>
+            </v-row>
           </v-tab-item>
         </v-tabs-items>
 
@@ -161,7 +205,7 @@
           </v-tab-item>
 
           <v-tab-item value="tdb-graph" v-bind:style="styleObject.tabItem">
-            <v-row class="ma-2 mb-10">
+            <v-row class="ma-2 mt-0">
               <vis-network
                 ref="visTdbDot"
                 v-bind:style="styleObject.dotContainer"
@@ -169,6 +213,51 @@
                 :edges="tdb_dot.edges"
                 :options="this.options"
               />
+            </v-row>
+            <v-row class="ma-2 mt-0 mb-10">
+              <v-dialog
+                v-model="tdb_vis_dialog"
+                fullscreen
+                hide-overlay
+                transition="dialog-bottom-transition"
+              >
+                <template v-slot:activator="{ on, attrs }">
+                  <v-btn
+                    color="primary"
+                    dark
+                    v-bind="attrs"
+                    v-on="on"
+                  >
+                    <v-icon>mdi-fullscreen</v-icon> View on Fullscreen
+                  </v-btn>
+                </template>
+                <v-card>
+                  <v-toolbar
+                    dark
+                    color="primary"
+                  >
+                    <v-btn
+                      icon
+                      dark
+                      @click="tdb_vis_dialog = false"
+                    >
+                      <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                    <v-toolbar-title>TDB visualization</v-toolbar-title>
+                    <v-spacer></v-spacer>
+                    <v-toolbar-title class="hidden-sm-and-down">
+                      Save as image using secondary (right) click over the visualization
+                    </v-toolbar-title>
+                  </v-toolbar>
+                  <vis-network
+                    ref="visTdbDot"
+                    v-bind:style="styleObject.dotFullScreenContainer"
+                    :nodes="tdb_dot.nodes"
+                    :edges="tdb_dot.edges"
+                    :options="this.options"
+                  />
+                </v-card>
+              </v-dialog>
             </v-row>
           </v-tab-item>
         </v-tabs-items>
@@ -742,14 +831,61 @@
             </v-card>
           </v-dialog>
 
+          <v-dialog
+                  v-model="demo_dialog"
+                  persistent
+                  max-width="1290"
+          >
+            <template v-slot:activator="{ on, attrs }">
+              <v-btn
+                      class="lighten-4 ma-1 mb-0 left white--text"
+                      dark
+                      rounded
+                      outlined
+                      text
+                      v-bind="attrs"
+                      v-on="on"
+              >
+                <v-icon class="mr-1">mdi-youtube</v-icon> Demo
+              </v-btn>
+            </template>
+            <v-card>
+              <v-card-title class="headline">
+              </v-card-title>
+              <v-card-text>
+                <div>
+                  <iframe
+                    class="v-responsive"
+                    width="1240"
+                    height="698"
+                    src="https://www.youtube.com/embed/g_Zdh_y-8Vc"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                  </iframe>
+                </div>
+              </v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                        color="primary darken-1"
+                        text
+                        @click="demo_dialog = false"
+                >
+                  Close
+                </v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+
           <a href="https://github.com/BastyZ/RDFPlayground" target="_blank">
             <v-btn
-              class="ma-1 mb-0 lighten-4 left white--text"
-              rounded
-              outlined
-              dark
-              color="white"
-              text
+                    class="ma-1 mb-0 lighten-4 left white--text"
+                    rounded
+                    outlined
+                    dark
+                    color="white"
+                    text
             >
               View on <v-icon class="ml-1">mdi-github</v-icon>
             </v-btn>
@@ -827,6 +963,7 @@
         "@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\n",
       graph_text_disabled: false,
       graph_dot: "digraph G {\n}",
+      graph_dot_vis: "",
       graph_error_text: "",
       tdb_tab: null,
       tdb_text: "Click on refresh to see the TDB graph",
@@ -885,7 +1022,12 @@
         dotContainer: {
           flex: 1,
           width: '100%',
-          height: '500px',
+          height: '418px',
+          border: '1px solid #d3d3d3',
+        },
+        dotFullScreenContainer: {
+          flex: 1,
+          height: '900px',
           border: '1px solid #d3d3d3',
         },
         dotResultsContainer: {
@@ -917,6 +1059,9 @@
       ],
       prefixcc_result: "",
       prefixcc_result_error: false,
+      graph_vis_dialog: false,
+      tdb_vis_dialog: false,
+      demo_dialog: false,
       about_dialog: false,
       aboutLoading: false,
       aboutGraph: "@base   <http://ex.org/> .\n" +
@@ -1096,6 +1241,7 @@
                       let parsedData = parseDOTNetwork(content.data_dot);
                       const refContainer = this.$refs.visNetworkGraph;
                       network = new vis.Network(refContainer, parsedData, options);
+                      this.graph_dot_vis = parseDOTNetwork(this.graph_dot);
                   } catch (e) {
                       this.check_syntax_loading = false;
                   }

@@ -17,8 +17,8 @@
     "vis-data": "^6.5.3",
     "vis-network": "^7.6.9",
     "vis-util": "^4.0.0",
-    "vue-vis-network": "^1.0.2",
     "vue": "^2.6.11",
+    "vue-vis-network": "^1.0.2",
     "vuetify": "^2.2.32"
   },
   "devDependencies": {
