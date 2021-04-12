@@ -67,6 +67,23 @@
               View your RDF data as a graph.
             </span>
           </v-tooltip>
+
+          <v-tooltip bottom>
+            <template v-slot:activator="{ on, attrs }">
+              <v-tab
+                  href="#tab-graph-browser"
+                  @click="checkSyntax"
+                  v-bind="attrs"
+                  v-on="on"
+              >
+                Browse
+                <v-icon>mdi-cloud-search</v-icon>
+              </v-tab>
+            </template>
+            <span>
+              Search RDF data on the web.
+            </span>
+          </v-tooltip>
         </v-tabs>
 
         <!-- Tab Contents -->
@@ -134,6 +151,10 @@
                 </v-card>
               </v-dialog>
             </v-row>
+          </v-tab-item>
+
+          <v-tab-item value="tab-graph-browser">
+            <input v-model="text" v-bind:style="styleObject.URIinput" placeholder="Write down that URI !">
           </v-tab-item>
         </v-tabs-items>
 
@@ -1046,6 +1067,11 @@
         },
         resultFromCol: {
           backgroundColor: 'secondary',
+        },
+        URIinput: {
+          width: '100%',
+          border: '1px solid black',
+          marginTop: '6px'
         }
       },
       prefixcc_dialog: false,
