@@ -13,8 +13,8 @@ services:
     build:
       context: ./odin
     volumes: 
-      - ./odin/src:/app/frontend/src:rw
-      - ./odin/package.json:/app/frontend/package.json:rw
-      - ./odin/package-lock.json:/app/frontend/package-lock.json:rw
+      - ./odin/src:/app/odin/src:rw
+      - ./odin/package.json:/app/odin/package.json:rw
+      - ./odin/package-lock.json:/app/odin/package-lock.json:rw
     ports: 
       - "9080:9080"
