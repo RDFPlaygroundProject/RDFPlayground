@@ -1,15 +1,13 @@
-FROM python:3 as dev
-ENV PYTHONUNBUFFERED 1
+FROM ubuntu:18.04
+
+RUN apt update && apt-get install -y python3 python3-pip default-jdk maven
+RUN pip3 install virtualenv
 RUN mkdir /app
 WORKDIR /app/mimir
-COPY src/main/reasoner/owlrl ./app/mimir
-#RUN python /app/mimir/src/main/reasoner/owlrl/setup.py install
-
-FROM maven:3.3-jdk-8-alpine
-WORKDIR /app/mimir
-COPY pom.xml /app/mimir
 COPY . /app/mimir
+RUN cd src/main/reasoner/owlrl && python setup.py install
 
+COPY pom.xml /app/mimir
 RUN mvn install
 
-CMD ["mvn", "spring-boot:run"]
+CMD /bin/bash -c "source venv/bin/activate" ; mvn spring-boot:run
