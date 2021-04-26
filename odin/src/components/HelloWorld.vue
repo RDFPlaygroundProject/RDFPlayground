@@ -72,7 +72,6 @@
             <template v-slot:activator="{ on, attrs }">
               <v-tab
                   href="#tab-graph-browser"
-                  @click="checkSyntax"
                   v-bind="attrs"
                   v-on="on"
               >
@@ -154,7 +153,7 @@
           </v-tab-item>
 
           <v-tab-item value="tab-graph-browser">
-            <input v-model="text" v-bind:style="styleObject.URIinput" placeholder="Write down that URI !">
+            <browser :check-syntax-color-reset-parent="checkSyntaxColorReset"/>
           </v-tab-item>
         </v-tabs-items>
 
@@ -935,6 +934,7 @@
   import {parseDOTNetwork} from 'vis-network';
   import vis from 'vis';
   import VLinedTextarea from "./VLinedTextarea";
+  import Browser from "./Browser";
 
   const backAPI = "localhost:9060";
 
@@ -969,7 +969,7 @@
 
   export default {
     name: 'HelloWorld',
-      components: {VLinedTextarea},
+      components: {VLinedTextarea, "browser": Browser},
       data: () => ({
       vis_graph: null,
       check_syntax_color: "primary",
