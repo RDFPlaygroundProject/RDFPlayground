@@ -2,6 +2,7 @@ package api.model
 
 
 import dot.DOTLang
+import formatAs
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.RDFDataMgr
@@ -13,7 +14,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
-import java.io.*
+import java.io.ByteArrayOutputStream
 
 
 data class UriRequest(val uri: String = "", val data_lang: String = "TTL")
@@ -36,7 +37,7 @@ class BrowseUriController {
         // Read Uri and load into Model
         val model : Model
         try {
-            model = readURI(requestBody.uri)
+            model = RDFDataMgr.loadModel(requestBody.uri, RDFLanguages.TTL)
         } catch (e: Exception) {
             return ResponseEntity(UriResponse(browse_error = e.message.toString()), HttpStatus.OK)
         }
@@ -52,7 +53,7 @@ class BrowseUriController {
             return ResponseEntity(UriResponse(browse_error = e.message.toString()), HttpStatus.INTERNAL_SERVER_ERROR)
         }
 
-        return ResponseEntity(UriResponse(data_dot = modelToDot.toString()), HttpStatus.OK)
+        return ResponseEntity(UriResponse(data_dot = model.formatAs("TTL").first), HttpStatus.OK)
     }
 
 
