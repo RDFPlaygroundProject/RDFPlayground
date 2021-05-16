@@ -2,7 +2,6 @@ package api.model
 
 
 import dot.DOTLang
-import formatAs
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.riot.RDFDataMgr
@@ -17,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController
 import java.io.ByteArrayOutputStream
 
 
-data class UriRequest(val uri: String = "", val data_lang: String = "TTL")
-data class UriResponse(val browse_error: String = "", val data_dot: String = "")
+data class UriRequest(val url: String = "")
+data class UriResponse(val browse_error: String = "", val model_dot: String = "")
 
 @RestController
 class BrowseUriController {
@@ -30,41 +29,35 @@ class BrowseUriController {
         produces = [MediaType.APPLICATION_JSON_UTF8_VALUE]
     )
     fun browseUri(@RequestBody requestBody: UriRequest): ResponseEntity<UriResponse>{
-        if (requestBody.uri.isBlank()) {
-            return ResponseEntity(UriResponse(), HttpStatus.NO_CONTENT)
+        if (requestBody.url.isBlank()) {
+            return ResponseEntity(UriResponse("Nothing to look up"), HttpStatus.NO_CONTENT)
         }
 
         // Read Uri and load into Model
-        val model : Model
+        val model : Model = ModelFactory.createDefaultModel()
         try {
-            model = RDFDataMgr.loadModel(requestBody.uri, RDFLanguages.TTL)
+            RDFDataMgr.read(model, requestBody.url)
+
         } catch (e: Exception) {
-            return ResponseEntity(UriResponse(browse_error = e.message.toString()), HttpStatus.OK)
+            return ResponseEntity(
+                UriResponse("Couldn't load data on model +\n " + e.message.toString()),
+                HttpStatus.NO_CONTENT
+            )
         }
 
-        val dotLang = DOTLang
-        assert(RDFLanguages.isRegistered(dotLang)) {"Controller Error, DOT is not registered on Jena"}
-        RDFLanguages.isRegistered(dotLang)
-
-        val modelToDot = ByteArrayOutputStream()
+        val modelOnDot = ByteArrayOutputStream()
         try {
-            RDFDataMgr.write(modelToDot, model, RDFFormat(DOTLang))
+            // Check if DOT lang is loaded
+            val dotLang = DOTLang
+            assert(RDFLanguages.isRegistered(dotLang)) {"Controller Error, DOT is not registered on Jena"}
+            RDFLanguages.isRegistered(dotLang)
+            RDFDataMgr.write(modelOnDot, model, RDFFormat(DOTLang))
         } catch (e:Exception) {
             return ResponseEntity(UriResponse(browse_error = e.message.toString()), HttpStatus.INTERNAL_SERVER_ERROR)
         }
 
-        return ResponseEntity(UriResponse(data_dot = model.formatAs("TTL").first), HttpStatus.OK)
-    }
-
-
-    private fun readURI(uri : String): Model {
-        val model : Model = ModelFactory.createDefaultModel()
-        try {
-            RDFDataMgr.read(model, uri)
-        } catch (e: Exception) {
-            throw e
-        }
-        return model
+        val sizes : String = model.size().toString()
+        return ResponseEntity(UriResponse(browse_error = sizes, model_dot = modelOnDot.toString()), HttpStatus.OK)
     }
 
 }
