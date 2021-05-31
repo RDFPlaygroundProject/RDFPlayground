@@ -1,0 +1,70 @@
+.v-lined-textarea {
+    display: flex;
+    font-size: 12px;
+    line-height: 100%;
+    font-family: monospace;
+  }
+  
+  .lined-textarea__lines {
+    background-color: #ffffff;
+    border-right-width: 0;
+    padding: 13px 10px 15px 15px;
+    margin-bottom: 35px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .lined-textarea__lines__inner {
+    position: absolute;
+    margin-top: 0.5rem;
+  }
+  
+  .lined-textarea__lines__line {
+    line-height: 12px;
+    text-align: right;
+  }
+  
+  .lined-textarea__lines__line--invalid {
+    font-weight: bold;
+    color: red;
+  }
+  
+  .lined-textarea__content {
+    border-left-width: 0;
+    margin: 0;
+    line-height: inherit;
+    font-family: monospace;
+    padding: 15px 0px 15px 2px;
+    width: 100%;
+    overflow: auto;
+  }
+  
+  .v-lined-textarea__content--wrap {
+    white-space: pre-wrap;
+  }
+  
+  .v-lined-textarea__content--nowrap {
+    white-space: pre;
+  }
+  
+  @supports (-ms-ime-align: auto) {
+    .v-lined-textarea__content--nowrap {
+      white-space: nowrap;
+    }
+  }
+  
+  .v-lined-textarea__content--disabled {
+    border-radius: 10px;
+    border-left-width: 1px;
+  }
+  
+  .lined-textarea__content:focus {
+    outline: none;
+  }
+  
+  .count-helper {
+    position: absolute;
+    visibility: hidden;
+    height: auto;
+    width: auto;
+  }
