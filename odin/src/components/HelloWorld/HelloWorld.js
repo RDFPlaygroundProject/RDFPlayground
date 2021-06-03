@@ -1,6 +1,6 @@
 import { parseDOTNetwork } from "vis-network";
 import vis from "vis";
-import VLinedTextarea from "../VLinedTextarea/VLinedTextarea";
+import VLinedTextarea from "../VLinedTextarea/VLinedTextarea.vue";
 
 const backAPI = "localhost:9060";
 

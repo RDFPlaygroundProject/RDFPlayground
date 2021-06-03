@@ -47,9 +47,9 @@
   </div>
 </template>
 
-<script>
+<script src="./VLinedTextarea.js">
 </script>
 
 <style scoped>
-@import ".VLinedTextarea.css";
+@import "./VLinedTextarea.css";
 </style>

@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld';
+import HelloWorld from './components/HelloWorld/HelloWorld.vue';
 document.title = "RDF Playground";
 
 export default {
