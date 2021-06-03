@@ -18,14 +18,17 @@
     "vis-network": "^7.6.9",
     "vis-util": "^4.0.0",
     "vue": "^2.6.11",
+    "vue-codemirror": "^4.0.6",
+    "vue-loader": "^15.9.7",
     "vue-vis-network": "^1.0.2",
-    "vuetify": "^2.2.32"
+    "vuetify": "^2.2.32",
+    "webpack": "^4.46.0"
   },
   "devDependencies": {
+    "@vue/cli": "~4.3.1",
     "@vue/cli-plugin-babel": "~4.3.1",
     "@vue/cli-plugin-eslint": "~4.3.1",
     "@vue/cli-service": "~4.3.1",
-    "@vue/cli": "~4.3.1",
     "babel-eslint": "^10.0.3",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.1.2",
