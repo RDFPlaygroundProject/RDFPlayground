@@ -48,13 +48,13 @@ open class DOTShell(
                 when {
                     triple.`object`.isLiteral ->
                         out.println(
-                            "\"${ triple.subject }\" -> \"${ triple.`object`.literal.value }\" " +
-                            "[label=\"${ prettyLabel(triple.predicate) }\",color=${colors.literalEdge}]"
+                            "\"${ triple.subject }\" -> \"${ prettyTriple(triple) }\" " +
+                            "[label=\"${ prettyLabel(triple.predicate) }\",color=\"${colors.literalEdge}\"]"
                         )
                     else ->
                         out.println(
                             "\"${ triple.subject }\" -> \"${ triple.`object` }\" " +
-                            "[label=\"${ prettyLabel(triple.predicate) }\",color=${colors.normalEdge}]"
+                            "[label=\"${ prettyLabel(triple.predicate) }\",color=\"${colors.normalEdge}\"]"
                         )
                 }
             }
@@ -68,16 +68,19 @@ open class DOTShell(
                     // Write a row for each node
                     node.isURI ->
                         out.println(
-                            "\"${ node.uri }\" [label=\"${ prettyLabel(node) }\",shape=ellipse,color=${colors.uri}]"
+                            "\"${ node.uri }\" [label=\"${ prettyLabel(node) }\",shape=ellipse,color=\"${colors.uri}\"]"
                         )
                     node.isBlank ->
                         out.println(
-                            "\"${node.blankNodeLabel}\" [label=\"\",shape=circle,color=${colors.blank}]"
+                            "\"${node.blankNodeLabel}\" [label=\"\",shape=circle,color=\"${colors.blank}\"]"
                         )
                     node.isLiteral ->
-                        out.println(
-                            "\"${node.literal.value}\" [label=\"${node.literal.value}\",shape=record,color=${colors.literal}]"
-                        )
+                        when {
+                            node.literal.value.toString().isNotEmpty() ->
+                                out.println(
+                                    "\"${prettyNode(node)}\" [label=\"${prettyNode(node)}\",shape=record,color=\"${colors.literal}\"]"
+                                )
+                        }
                 }
             }
         }
@@ -114,6 +117,14 @@ open class DOTShell(
             null -> node.uri
             else -> "${node.prefix(prefixMap)}:${node.localName}"
         }
+    }
+
+    private fun prettyTriple(triple: Triple): String {
+        return triple.`object`.literal.value.toString().replace("\"", "\'" )
+    }
+
+    private fun prettyNode(node: Node): String {
+        return node.literal.value.toString().replace("\"", "\'" )
     }
 
 }
