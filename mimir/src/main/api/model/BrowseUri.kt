@@ -45,19 +45,19 @@ class BrowseUriController {
             )
         }
 
+        // Check if DOT lang is loaded
+        val dotLang = DOTLang
+        assert(RDFLanguages.isRegistered(dotLang)) {"Controller Error, DOT is not registered on Jena"}
+        RDFLanguages.isRegistered(dotLang)
+
         val modelOnDot = ByteArrayOutputStream()
         try {
-            // Check if DOT lang is loaded
-            val dotLang = DOTLang
-            assert(RDFLanguages.isRegistered(dotLang)) {"Controller Error, DOT is not registered on Jena"}
-            RDFLanguages.isRegistered(dotLang)
             RDFDataMgr.write(modelOnDot, model, RDFFormat(DOTLang))
         } catch (e:Exception) {
             return ResponseEntity(UriResponse(browse_error = e.message.toString()), HttpStatus.INTERNAL_SERVER_ERROR)
         }
 
-        val sizes : String = model.size().toString()
-        return ResponseEntity(UriResponse(browse_error = sizes, model_dot = modelOnDot.toString()), HttpStatus.OK)
+        return ResponseEntity(UriResponse(model_dot = modelOnDot.toString()), HttpStatus.OK)
     }
 
 }
