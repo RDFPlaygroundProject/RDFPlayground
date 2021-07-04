@@ -30,7 +30,7 @@ class BrowseUriController {
     )
     fun browseUri(@RequestBody requestBody: UriRequest): ResponseEntity<UriResponse>{
         if (requestBody.url.isBlank()) {
-            return ResponseEntity(UriResponse("Nothing to look up"), HttpStatus.NO_CONTENT)
+            return ResponseEntity(UriResponse("Nothing to look up" + requestBody.url), HttpStatus.NO_CONTENT)
         }
 
         // Read Uri and load into Model
@@ -40,8 +40,8 @@ class BrowseUriController {
 
         } catch (e: Exception) {
             return ResponseEntity(
-                UriResponse("Couldn't load data on model +\n " + e.message.toString()),
-                HttpStatus.NO_CONTENT
+                UriResponse(browse_error = e.message.toString()),
+                HttpStatus.OK,
             )
         }
 
