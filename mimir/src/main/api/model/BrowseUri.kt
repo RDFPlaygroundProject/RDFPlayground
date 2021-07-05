@@ -40,7 +40,8 @@ class BrowseUriController {
 
         } catch (e: Exception) {
             return ResponseEntity(
-                UriResponse(browse_error = e.message.toString()),
+                UriResponse("Apache Jena was unable to load data in a model. Error was: \n" +
+                        e.message.toString()),
                 HttpStatus.OK,
             )
         }
