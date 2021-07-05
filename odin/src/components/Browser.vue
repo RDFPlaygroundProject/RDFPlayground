@@ -1,26 +1,53 @@
 <template>
   <v-container>
     <v-row class="ma-1 mb-1">
-      <input class="iri-input" v-model="url" placeholder="Enter your IRI here">
-      <v-col class="text-right">
+      <input v-model="url"
+             v-bind:style="styleBrowserObject.iriInput"
+             placeholder="Insert an URL  here">
+    </v-row>
+
+    <v-row class="ma-1 mb-2">
+      <v-col md="10">
+        <v-alert
+            v-model="browse_error_dialog"
+            dense
+            outlined
+            dismissible
+            type="error"
+        >
+          {{ this.browse_error_text }}
+        </v-alert>
+      </v-col>
+      <v-col class="text-right" md="2">
         <v-btn
+            color="primary"
+            class="ma-2"
+            :loading="search_loading"
+            :disabled="search_loading"
             @click="searchIri"
         >
           Search
+          <template v-slot:loader>
+            <span class="custom-loader">
+              <v-icon light>mdi-cached</v-icon>
+            </span>
+          </template>
         </v-btn>
       </v-col>
     </v-row>
 
-    <v-row class="ma-2 mb-1">
-      <div id="browseNetwork" class="dot-container"></div>
-    </v-row>
+
+
     <v-row class="ma-2 mt-0 mb-10">
       <v-dialog
+          v-model="browse_vis_dialog"
+          eager
           fullscreen
           hide-overlay
           transition="dialog-bottom-transition"
+
       >
-        <template v-slot:activator="{ on, attrs }">
+<!--        <template v-slot:activator="{ on, attrs }">
           <v-btn
               color="primary"
               dark
@@ -29,7 +56,7 @@
           >
             <v-icon>mdi-fullscreen</v-icon> View on Fullscreen
           </v-btn>
-        </template>
+        </template>-->
         <v-card>
           <v-toolbar
               dark
@@ -38,64 +65,115 @@
             <v-btn
                 icon
                 dark
+                @click="browse_vis_dialog = false"
             >
               <v-icon>mdi-close</v-icon>
             </v-btn>
             <v-toolbar-title>Graph Visualization</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-toolbar-title class="hidden-sm-and-down">Save as image using secondary (right) click over the visualization</v-toolbar-title>
+            <v-btn
+                @click="resetNetwork"
+            >
+              Reset
+            </v-btn>
           </v-toolbar>
-          <vis-network ref="browseNetwork"
-                       class="dot-fullscreen-container"
-                       :nodes="browse_dot_vis.nodes"
-                       :edges="browse_dot_vis.edges"
-          />
+          <v-row class="ma-2 mt-0 mb-10">
+            <v-col cols="2">
+              Implement manipulation of the graph here
+            </v-col>
+            <v-col cols="10">
+              <div ref="browseNetworkGraph"
+                   v-bind:style="styleBrowserObject.dotFullscreenContainer">
+              </div>
+            </v-col>
+          </v-row>
         </v-card>
       </v-dialog>
+
     </v-row>
   </v-container>
 </template>
 
 <script>
 
-import {Network} from 'vis-network/peer';
-import {parseDOTNetwork} from 'vis-network/peer';
+
+import {Network} from 'vis-network';
+import {parseDOTNetwork} from 'vis-network';
+// import vis from 'vis';
 
 const backAPI = "localhost:9060";
-
-//const options = {}
-
-  /*nodes: {
+let options = {
+  nodes: {
     font: {
-      size: 6,
+      size: 12,
     },
   },
   edges: {
-    length: 60,
+    length: 120,
     font: {
-      size: 6,
+      size: 12,
     },
   },
-};*/
-
+};
 
 // eslint-disable-next-line no-unused-vars
 let browseNetwork = null;
 
 export default {
 
-
   name: "Browser",
   data: () => ({
     url: "",
     browse_dot_vis: "",
+    browse_error_text: "",
+    browse_error_dialog: false,
+    browse_vis_dialog: false,
+    central_node: "",
+    search_loading: false,
+    loader: null,
+    styleBrowserObject: {
+      iriInput: {
+        borderBottom: '1px solid lightgray',
+        borderTop: '1px solid lightgray',
+        paddingTop: '4px',
+        paddingBottom: '4px',
+        marginTop: '6px',
+        width: '100%'
+      },
+      dotContainer: {
+        flex: 1,
+        width: '100%',
+        height: '418px',
+        border: '1px solid #d3d3d3'
+      },
+
+      dotFullscreenContainer: {
+        flex: 1,
+        width: '100%',
+        height: '840px',
+        border: '1px solid #d3d3d3',
+      },
+    }
   }),
 
   methods: {
     searchIri: function () {
+      this.browse_error_dialog = false
+
+      if (!this.url) {
+        this.browse_error_text = "No URL to search for. Try this! \n" +
+            "---> http://dbpedia.org/resource/University_of_Chile <---"
+        this.browse_error_dialog = true
+        return
+      }
 
       let requestBody = { url: this.url.toString() };
-      console.log("Uri safe")
+      this.search_loading = true
+      console.log("uri safe")
+
+      if (browseNetwork !== null) {
+        this.resetNetwork();
+      }
 
       fetch('http://' + backAPI + '/api/model/browse', {
         method: 'POST',
@@ -104,65 +182,150 @@ export default {
         }),
         body: JSON.stringify(requestBody),
       })
-        .then(response => {
-          if (!response.ok) {
-            console.log('Response not 200, instead we got ' + response.status);
-          }
-          else {
-            console.log("hola")
-            console.log(response);
-            response.json().then(content => {
-              console.log(content.browse_error);
-              console.log(content.model_dot);
+          .then(response => {
+            if (!response.ok) {
+              this.browse_error_text = response.status
+              this.search_loading = false
+              console.log('Response not 200, instead we got ' + response.status);
+            }
+            else {
+              console.log("Responses inc")
+              response.json().then(content => {
+                this.browse_dot_vis = content.model_dot;
+                this.browse_error_text = content.browse_error;
 
-              try {
-                const container = document.getElementById("browseNetwork");
-                let parsedData = parseDOTNetwork(content.model_dot);
-                let data = {
-                  nodes: parsedData.nodes,
-                  edges: parsedData.edges,
+                if (content.model_dot === "" && content.browse_error !== "") {
+                  this.browse_error_dialog = true
+                  this.search_loading = false
                 }
-                let options = parsedData.options;
-                browseNetwork = new Network(container, data, options)
-              } catch (e) {
-                  console.log(e.message)
-              }
-            });
-          }
-        })
-      .catch(error => {
-        console.log(error)
-      })
+                else {
+                  try {
+                    const refContainer = this.$refs.browseNetworkGraph;
+                    let parsedData = parseDOTNetwork(content.model_dot);
+
+                    this.browse_vis_dialog = true;
+                    this.search_loading = false
+                    console.log(this.url)
+                    let central_node = this.centralNode(parsedData.nodes)
+                    let edgesFN = this.edgesFromNode(parsedData.edges, central_node)
+                    let nfe = this.nodesFromEdges(edgesFN, parsedData.nodes, false)
+                    console.log(nfe)
+                    console.log(parsedData.nodes)
+                    console.log(parsedData.nodes.filter(n => !nfe.includes(n)))
+
+                    let net = this.buildNetworkData(central_node, edgesFN)
+                    console.log(net)
+
+                    browseNetwork = new Network(refContainer, net, options);
+
+                  } catch (e) {
+                    this.browse_error_text = e
+                    console.log(e)
+                  }
+                }
+              });
+            }
+          })
+          .catch(error => {
+            this.browse_error_text = error
+            console.log(error)
+          })
+    },
+
+    resetNetwork: function () {
+      browseNetwork.destroy()
+    },
+
+    centralNode: function(urlNodes) {
+      const candidates = urlNodes.filter((node) => node.id.includes(this.url.toString()))
+      return candidates.reduce((node1, node2) => node1.id.length <= node2.id.length ? node1 : node2)
+    },
+
+    edgesFromNode: function(edges, node) {
+      return edges.filter((edgeNode) => edgeNode.from === node.id)
+    },
+
+    edgesToNode: function(edges, node) {
+      return edges.filter((edgeNode) => edgeNode.to === node.id)
+    },
+
+    nodesFromEdges: function(edges, nodes, from_to) {
+      if (!from_to){
+        const fromNodesID = edges.map(
+            (edge) => edge.to
+        )
+        return nodes.filter(
+            (node) => fromNodesID.includes(node.id)
+        )
+      }
+
+
+    },
+
+    buildNetworkData: function(nodes, edges) {
+      if (!Array.isArray(nodes)) {
+        return {nodes: [nodes], edges: edges}
+      }
+      if (!Array.isArray(edges)) {
+        return {nodes: nodes, edges: [edges]}
+      }
+      if (!Array.isArray(nodes) && !Array.isArray(edges)) {
+        return {nodes: [nodes], edges: [edges]}
+      }
+      return {nodes: nodes, edges: edges}
     }
+
+  },
+
+  watch: {
+    loader() {
+      const l = this.loader
+      this[l] = !this[l]
+      setTimeout(() => (this.search_loading = false), 10000)
+
+      this.loader = null
+    },
 
   }
 }
 
 </script>
 
-<style scoped>
-
-.iri-input {
-  border-bottom: 1px solid lightgray;
-  border-top: 1px solid lightgray;
-  padding-top: 4px;
-  padding-bottom: 4px;
-  margin-top: 6px;
-  width: 100%;
+<style>
+.custom-loader {
+  animation: loader 1s infinite;
+  display: flex;
 }
-
-.dot-container {
-  flex: 1;
-  width: 100%;
-  height: 418px;
-  border: 1px solid #d3d3d3;
+@-moz-keyframes loader {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
-
-.dot-fullscreen-container {
-  flex: 1;
-  height: 900px;
-  border: 1px solid #d3d3d3;
+@-webkit-keyframes loader {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
-
-
+@-o-keyframes loader {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes loader {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 </style>
