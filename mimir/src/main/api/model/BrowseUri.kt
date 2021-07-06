@@ -14,10 +14,11 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import java.io.ByteArrayOutputStream
+import formatAs
 
 
 data class UriRequest(val url: String = "")
-data class UriResponse(val browse_error: String = "", val model_dot: String = "")
+data class UriResponse(val browse_error: String = "", val model_dot: String = "", val model_ttl: String = "")
 
 @RestController
 class BrowseUriController {
@@ -58,7 +59,7 @@ class BrowseUriController {
             return ResponseEntity(UriResponse(browse_error = e.message.toString()), HttpStatus.INTERNAL_SERVER_ERROR)
         }
 
-        return ResponseEntity(UriResponse(model_dot = modelOnDot.toString()), HttpStatus.OK)
+        return ResponseEntity(UriResponse(model_dot = modelOnDot.toString(), model_ttl = model.formatAs("TTL").first), HttpStatus.OK)
     }
 
 }
