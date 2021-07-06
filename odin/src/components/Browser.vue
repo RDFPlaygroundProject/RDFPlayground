@@ -1,17 +1,16 @@
 <template>
   <v-container>
-    <v-row class="ma-1 mb-1">
+    <v-row class="ma-0">
       <input v-model="url"
              v-bind:style="styleBrowserObject.iriInput"
              placeholder="Insert an URL  here">
     </v-row>
 
-    <v-row class="ma-1 mb-2">
+    <v-row class="ma-0 mb-2">
       <v-col md="10">
         <v-alert
             v-model="browse_error_dialog"
             dense
-            outlined
             dismissible
             type="error"
         >
@@ -21,7 +20,7 @@
       <v-col class="text-right" md="2">
         <v-btn
             color="primary"
-            class="ma-2"
+            dense
             :loading="search_loading"
             :disabled="search_loading"
             @click="searchIri"
@@ -131,12 +130,13 @@ export default {
     central_node: "",
     search_loading: false,
     loader: null,
+    nodeList: [],
     styleBrowserObject: {
       iriInput: {
         borderBottom: '1px solid lightgray',
         borderTop: '1px solid lightgray',
-        paddingTop: '4px',
-        paddingBottom: '4px',
+        paddingTop: '6px',
+        paddingBottom: '6px',
         marginTop: '6px',
         width: '100%'
       },
@@ -202,19 +202,19 @@ export default {
                   try {
                     const refContainer = this.$refs.browseNetworkGraph;
                     let parsedData = parseDOTNetwork(content.model_dot);
+                    let ttlData = content.model_ttl
+                    console.log(ttlData)
 
                     this.browse_vis_dialog = true;
                     this.search_loading = false
-                    console.log(this.url)
+
                     let central_node = this.centralNode(parsedData.nodes)
-                    let edgesFN = this.edgesFromNode(parsedData.edges, central_node)
-                    let nfe = this.nodesFromEdges(edgesFN, parsedData.nodes, false)
-                    console.log(nfe)
-                    console.log(parsedData.nodes)
-                    console.log(parsedData.nodes.filter(n => !nfe.includes(n)))
+                    let edgesFN = this.nodeEdges(parsedData.edges, central_node)
+                    // let nfe = this.nodesFromEdges(edgesFN, parsedData.nodes, false)
 
                     let net = this.buildNetworkData(central_node, edgesFN)
-                    console.log(net)
+                    console.log(this.apacheNodes(parsedData.nodes))
+                    console.log(this.apacheEdges(parsedData.edges))
 
                     browseNetwork = new Network(refContainer, net, options);
 
@@ -236,18 +236,27 @@ export default {
       browseNetwork.destroy()
     },
 
+
+
     centralNode: function(urlNodes) {
       const candidates = urlNodes.filter((node) => node.id.includes(this.url.toString()))
       return candidates.reduce((node1, node2) => node1.id.length <= node2.id.length ? node1 : node2)
     },
 
-    edgesFromNode: function(edges, node) {
-      return edges.filter((edgeNode) => edgeNode.from === node.id)
+    nodeEdges: function(edges, node) {
+      return edges.filter((edgeNode) => edgeNode.from === node.id || edgeNode.to === node.id)
     },
 
+    apacheNodes: function(nodes) {
+      return nodes.filter((node) => node.id.includes('org.apache'))
+    },
+    apacheEdges: function(edges) {
+      return edges.filter((edge) => edge.to.includes('org.apache') || edge.from.includes('org.apache'))
+    },
+/*
     edgesToNode: function(edges, node) {
       return edges.filter((edgeNode) => edgeNode.to === node.id)
-    },
+    },*/
 
     nodesFromEdges: function(edges, nodes, from_to) {
       if (!from_to){
