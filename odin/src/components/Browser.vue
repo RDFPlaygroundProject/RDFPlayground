@@ -6,12 +6,14 @@
              placeholder="Insert an URL  here">
     </v-row>
 
-    <v-row class="ma-0 mb-2">
+    <v-row class="mt-0">
       <v-col md="10">
         <v-alert
             v-model="browse_error_dialog"
             dense
+            text
             dismissible
+            prominent
             type="error"
         >
           {{ this.browse_error_text }}
@@ -78,7 +80,20 @@
           </v-toolbar>
           <v-row class="ma-2 mt-0 mb-10">
             <v-col cols="2">
-              Implement manipulation of the graph here
+              <v-btn
+                  dark
+                  @click="updateNetwork"
+              >Add Selected Properties</v-btn>
+              <v-treeview
+                  v-model="selection"
+                  :items="selectable_properties"
+                  selectable
+                  selection-type="leaf"
+                  dense
+                  return-object
+                  style="max-height: 800px"
+                  class="overflow-y-auto"
+              ></v-treeview>
             </v-col>
             <v-col cols="10">
               <div ref="browseNetworkGraph"
@@ -123,14 +138,16 @@ export default {
   name: "Browser",
   data: () => ({
     url: "",
-    browse_dot_vis: "",
     browse_error_text: "",
     browse_error_dialog: false,
     browse_vis_dialog: false,
     central_node: "",
     search_loading: false,
     loader: null,
-    nodeList: [],
+    parsedData: {},
+    network: {},
+    selectable_properties: [],
+    selection: [],
     styleBrowserObject: {
       iriInput: {
         borderBottom: '1px solid lightgray',
@@ -158,23 +175,32 @@ export default {
 
   methods: {
     searchIri: function () {
-      this.browse_error_dialog = false
+      // Sends URL from input to API, and creates a graph network with the response
 
-      if (!this.url) {
-        this.browse_error_text = "No URL to search for. Try this! \n" +
-            "---> http://dbpedia.org/resource/University_of_Chile <---"
-        this.browse_error_dialog = true
-        return
-      }
+      // Restart global variables
+      this.browse_error_dialog = false;
+      this.search_loading = true;
+      this.parsedData = {};
 
-      let requestBody = { url: this.url.toString() };
-      this.search_loading = true
-      console.log("uri safe")
-
+      // Restart network
       if (browseNetwork !== null) {
         this.resetNetwork();
       }
 
+      // Empty URL case
+      if (!this.url) {
+        this.browse_error_text = "No URL to search for. Try this! \n" +
+            "---> http://dbpedia.org/resource/University_of_Chile <---";
+        this.browse_error_dialog = true;
+        this.search_loading = false;
+        return
+      }
+
+      // Package URL as JSON
+      let requestBody = { url: this.url.toString() };
+
+      console.log("uri safe")
+      // Send URL to API
       fetch('http://' + backAPI + '/api/model/browse', {
         method: 'POST',
         headers: new Headers({
@@ -184,59 +210,62 @@ export default {
       })
           .then(response => {
             if (!response.ok) {
-              this.browse_error_text = response.status
-              this.search_loading = false
+              // If response's not ok, then pop up the error
+              this.browse_error_dialog = true;
+              this.browse_error_text = response.status;
+              this.search_loading = false;
               console.log('Response not 200, instead we got ' + response.status);
             }
             else {
-              console.log("Responses inc")
+              console.log("Responses inc");
               response.json().then(content => {
-                this.browse_dot_vis = content.model_dot;
-                this.browse_error_text = content.browse_error;
-
                 if (content.model_dot === "" && content.browse_error !== "") {
-                  this.browse_error_dialog = true
-                  this.search_loading = false
+                  // Check if model is empty and display the error from the API
+                  this.browse_error_text = content.browse_error;
+                  this.browse_error_dialog = true;
+                  this.search_loading = false;
                 }
                 else {
                   try {
+                    // Set the graph container and parse the data
                     const refContainer = this.$refs.browseNetworkGraph;
-                    let parsedData = parseDOTNetwork(content.model_dot);
-                    let ttlData = content.model_ttl
-                    console.log(ttlData)
+                    this.parsedData = parseDOTNetwork(content.model_dot);
+
+                    this.current_nodes = this.centralNode(this.parsedData.nodes);
+
+                    this.current_edges = this.nodeEdges(this.parsedData.edges, this.current_nodes);
+
+                    this.current_edges.sort((a,b) => a.label.localeCompare(b.label));
+
+                    this.selectable_properties = this.sidebarProperties(this.current_edges);
+
+                    /*console.log(this.parsedData.edges)
+                    console.log(this.current_edges)
+                    console.log(this.selectable_properties)*/
+
+                    this.network = this.buildNetworkData(this.current_nodes, this.current_edges);
+
+                    browseNetwork = new Network(refContainer, this.network, options);
 
                     this.browse_vis_dialog = true;
-                    this.search_loading = false
-
-                    let central_node = this.centralNode(parsedData.nodes)
-                    let edgesFN = this.nodeEdges(parsedData.edges, central_node)
-                    // let nfe = this.nodesFromEdges(edgesFN, parsedData.nodes, false)
-
-                    let net = this.buildNetworkData(central_node, edgesFN)
-                    console.log(this.apacheNodes(parsedData.nodes))
-                    console.log(this.apacheEdges(parsedData.edges))
-
-                    browseNetwork = new Network(refContainer, net, options);
-
+                    this.search_loading = false;
                   } catch (e) {
-                    this.browse_error_text = e
-                    console.log(e)
+                    this.browse_error_text = e;
+                    this.browse_error_dialog = true;
                   }
                 }
               });
             }
           })
           .catch(error => {
-            this.browse_error_text = error
-            console.log(error)
+            this.browse_error_text = error;
+            this.browse_error_dialog = true;
           })
     },
 
     resetNetwork: function () {
       browseNetwork.destroy()
     },
-
-
 
     centralNode: function(urlNodes) {
       const candidates = urlNodes.filter((node) => node.id.includes(this.url.toString()))
@@ -247,29 +276,38 @@ export default {
       return edges.filter((edgeNode) => edgeNode.from === node.id || edgeNode.to === node.id)
     },
 
+    sidebarProperties: function(edges) {
+      let sidebar_p = []
+      let i = 1
+      edges.forEach(edge => {
+        let new_edge = edge;
+        new_edge.name = new_edge.label;
+
+        let property ={"id":i ,"name": edge.label, "children": [new_edge]};
+        let added_property = false
+
+        sidebar_p.forEach(prop => {
+          if (prop.name === new_edge.label) {
+            prop.children.push(new_edge)
+            added_property = true
+          }
+        })
+        if (!added_property) {
+          sidebar_p.push(property)
+        }
+        i = i+1
+      })
+      return sidebar_p
+    },
+
     apacheNodes: function(nodes) {
       return nodes.filter((node) => node.id.includes('org.apache'))
     },
     apacheEdges: function(edges) {
       return edges.filter((edge) => edge.to.includes('org.apache') || edge.from.includes('org.apache'))
     },
-/*
-    edgesToNode: function(edges, node) {
-      return edges.filter((edgeNode) => edgeNode.to === node.id)
-    },*/
-
-    nodesFromEdges: function(edges, nodes, from_to) {
-      if (!from_to){
-        const fromNodesID = edges.map(
-            (edge) => edge.to
-        )
-        return nodes.filter(
-            (node) => fromNodesID.includes(node.id)
-        )
-      }
 
 
-    },
 
     buildNetworkData: function(nodes, edges) {
       if (!Array.isArray(nodes)) {
@@ -282,7 +320,30 @@ export default {
         return {nodes: [nodes], edges: [edges]}
       }
       return {nodes: nodes, edges: edges}
+    },
+
+    updateNetwork: function() {
+      console.log("asdad")
+      console.log(this.selection)
+      console.log(this.selectable_properties)
+      this.selection.forEach(edge => {
+        if (!this.network.edges.some(net_edge => edge.id === net_edge.id)){
+          this.network.edges.push(edge)
+        }
+        let to_node = edge.to
+        let from_node = edge.from
+        if (!this.network.nodes.some(net_node => net_node.id === to_node)){
+          this.network.nodes.push(this.parsedData.nodes.find(parsed_node => parsed_node.id === to_node))
+        }
+        if (!this.network.nodes.some(net_node => net_node.id === from_node)){
+          this.network.nodes.push(this.parsedData.nodes.find(parsed_node => parsed_node.id === from_node))
+        }
+      })
+      console.log(this.network)
+      browseNetwork.setData(this.network)
+      browseNetwork.redraw()
     }
+
 
   },
 
