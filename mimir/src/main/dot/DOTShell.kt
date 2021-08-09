@@ -78,7 +78,8 @@ open class DOTShell(
                         when {
                             node.literal.value.toString().isNotEmpty() ->
                                 out.println(
-                                    "\"${prettyNode(node)}\" [label=\"${prettyNode(node)}\",shape=record,color=\"${colors.literal}\"]"
+                                    "\"${prettyNode(node)}\" [label=\"${prettyNode(node)}\"," +
+                                            "shape=record,color=\"${colors.literal}\", ${langLiteral(node)} ]"
                                 )
                         }
                 }
@@ -125,6 +126,13 @@ open class DOTShell(
 
     private fun prettyNode(node: Node): String {
         return node.literal.value.toString().replace("\"", "\'" )
+    }
+
+    private fun langLiteral(node: Node): String {
+        if (node.literalLanguage != "") {
+            return "lang= \"${node.literalLanguage}\""
+        }
+        return ""
     }
 
 }
