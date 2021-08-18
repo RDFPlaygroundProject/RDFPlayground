@@ -229,21 +229,26 @@ export default {
                   try {
                     // Set the graph container and parse the data
                     const refContainer = this.$refs.browseNetworkGraph;
+
                     this.parsedData = parseDOTNetwork(content.model_dot);
+                    console.log(this.parsedData)
 
-                    this.current_nodes = this.centralNode(this.parsedData.nodes);
+                    let current_nodes = this.centralNode(this.parsedData.nodes);
+                    console.log(current_nodes)
+                    this.central_node = current_nodes.id;
+                    let current_edges = this.parsedData.edges
 
-                    this.current_edges = this.nodeEdges(this.parsedData.edges, this.current_nodes);
+                    console.log(this.central_node)
 
-                    this.current_edges.sort((a,b) => a.label.localeCompare(b.label));
+                    current_edges.sort((a,b) => a.label.localeCompare(b.label));
 
-                    this.selectable_properties = this.sidebarProperties(this.current_edges);
+                    this.selectable_properties = this.sidebarProperties(current_edges);
 
                     /*console.log(this.parsedData.edges)
                     console.log(this.current_edges)
                     console.log(this.selectable_properties)*/
 
-                    this.network = this.buildNetworkData(this.current_nodes, this.current_edges);
+                    this.network = this.buildNetworkData(current_nodes, []);
 
                     browseNetwork = new Network(refContainer, this.network, options);
 
@@ -252,6 +257,7 @@ export default {
                   } catch (e) {
                     this.browse_error_text = e;
                     this.browse_error_dialog = true;
+                    this.search_loading = false;
                   }
                 }
               });
@@ -283,19 +289,22 @@ export default {
         let new_edge = edge;
         new_edge.name = new_edge.label;
 
-        let property ={"id":i ,"name": edge.label, "children": [new_edge]};
+        let property ={"id":i ,"name": edge.label, "edges": [new_edge]};
         let added_property = false
 
         sidebar_p.forEach(prop => {
           if (prop.name === new_edge.label) {
-            prop.children.push(new_edge)
+            prop.edges.push(new_edge)
             added_property = true
           }
         })
         if (!added_property) {
           sidebar_p.push(property)
         }
-        i = i+1
+        i += 1
+      })
+      sidebar_p.forEach(prop => {
+        prop.name = prop.name + " (" + prop.edges.length.toString() + ")"
       })
       return sidebar_p
     },
@@ -322,23 +331,48 @@ export default {
       return {nodes: nodes, edges: edges}
     },
 
-    updateNetwork: function() {
-      console.log("asdad")
-      console.log(this.selection)
-      console.log(this.selectable_properties)
-      this.selection.forEach(edge => {
-        if (!this.network.edges.some(net_edge => edge.id === net_edge.id)){
-          this.network.edges.push(edge)
-        }
-        let to_node = edge.to
-        let from_node = edge.from
-        if (!this.network.nodes.some(net_node => net_node.id === to_node)){
-          this.network.nodes.push(this.parsedData.nodes.find(parsed_node => parsed_node.id === to_node))
-        }
-        if (!this.network.nodes.some(net_node => net_node.id === from_node)){
-          this.network.nodes.push(this.parsedData.nodes.find(parsed_node => parsed_node.id === from_node))
-        }
-      })
+    updateNetwork: function(added_edges, removed_edges) {
+      if (added_edges.length !== 0) {
+        console.log("got here")
+        console.log(added_edges)
+        added_edges.forEach(prop => {
+          prop.edges.forEach(edge => {
+            if (!this.network.edges.some(net_edge => edge.id === net_edge.id)){
+              this.network.edges.push(edge)
+            }
+            let to_node = edge.to
+            let from_node = edge.from
+            if (!this.network.nodes.some(net_node => net_node.id === to_node)){
+              this.network.nodes.push(this.parsedData.nodes.find(parsed_node => parsed_node.id === to_node))
+            }
+            if (!this.network.nodes.some(net_node => net_node.id === from_node)){
+              this.network.nodes.push(this.parsedData.nodes.find(parsed_node => parsed_node.id === from_node))
+            }
+          })
+        })
+      }
+      if (removed_edges.length !== 0) {
+        console.log("got here to")
+        removed_edges.forEach(prop => {
+          prop.edges.forEach(edge => {
+            if (this.network.edges.some(net_edge => net_edge.id === edge.id)) {
+              this.network.edges = this.network.edges.filter(net_edge => net_edge.id !== edge.id)
+            }
+            let to_node = edge.to
+            let from_node = edge.from
+            if (!this.network.edges.some(net_edge => net_edge.to === to_node || net_edge.from === to_node)){
+              if (to_node !== this.central_node) {
+                this.network.nodes = this.network.nodes.filter(net_node => net_node.id !== to_node)
+              }
+            }
+            if (!this.network.edges.some(net_edge => net_edge.to === from_node || net_edge.from === from_node)){
+              if (from_node !== this.central_node) {
+                this.network.nodes = this.network.nodes.filter(net_node => net_node.id !== from_node)
+              }
+            }
+          })
+        })
+      }
       console.log(this.network)
       browseNetwork.setData(this.network)
       browseNetwork.redraw()
@@ -354,6 +388,14 @@ export default {
       setTimeout(() => (this.search_loading = false), 10000)
 
       this.loader = null
+    },
+
+    selection: {
+      handler(val, oldVal) {
+        let new_edges = val.filter(edges => !oldVal.includes(edges))
+        let removed_edges = oldVal.filter (edges => !val.includes(edges))
+        this.updateNetwork(new_edges, removed_edges)
+      }
     },
 
   }
