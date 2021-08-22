@@ -37,8 +37,6 @@
       </v-col>
     </v-row>
 
-
-
     <v-row class="ma-2 mt-0 mb-10">
       <v-dialog
           v-model="browse_vis_dialog"
@@ -48,16 +46,6 @@
           transition="dialog-bottom-transition"
 
       >
-<!--        <template v-slot:activator="{ on, attrs }">
-          <v-btn
-              color="primary"
-              dark
-              v-bind="attrs"
-              v-on="on"
-          >
-            <v-icon>mdi-fullscreen</v-icon> View on Fullscreen
-          </v-btn>
-        </template>-->
         <v-card>
           <v-toolbar
               dark
@@ -80,10 +68,6 @@
           </v-toolbar>
           <v-row class="ma-2 mt-0 mb-10">
             <v-col cols="2">
-              <v-btn
-                  dark
-                  @click="updateNetwork"
-              >Add Selected Properties</v-btn>
               <v-treeview
                   v-model="selection"
                   :items="selectable_properties"
@@ -91,7 +75,7 @@
                   selection-type="leaf"
                   dense
                   return-object
-                  style="max-height: 800px"
+                  v-bind:style="styleBrowserObject.sideProperties"
                   class="overflow-y-auto"
               ></v-treeview>
             </v-col>
@@ -137,17 +121,19 @@ export default {
 
   name: "Browser",
   data: () => ({
-    url: "",
     browse_error_text: "",
     browse_error_dialog: false,
     browse_vis_dialog: false,
-    central_node: "",
-    search_loading: false,
+    central_node: {},
+    dotData: "",
     loader: null,
     parsedData: {},
     network: {},
+    search_loading: false,
     selectable_properties: [],
     selection: [],
+    url: "",
+    url_from_network: "",
     styleBrowserObject: {
       iriInput: {
         borderBottom: '1px solid lightgray',
@@ -170,6 +156,10 @@ export default {
         height: '840px',
         border: '1px solid #d3d3d3',
       },
+      sideProperties: {
+        height: '840px',
+        border: '1px solid #d3d3d3'
+      }
     }
   }),
 
@@ -226,35 +216,11 @@ export default {
                   this.search_loading = false;
                 }
                 else {
+                  this.dotData = content.model_dot
                   try {
-                    // Set the graph container and parse the data
-                    const refContainer = this.$refs.browseNetworkGraph;
-
-                    this.parsedData = parseDOTNetwork(content.model_dot);
-                    console.log(this.parsedData)
-
-                    let current_nodes = this.centralNode(this.parsedData.nodes);
-                    console.log(current_nodes)
-                    this.central_node = current_nodes.id;
-                    let current_edges = this.parsedData.edges
-
-                    console.log(this.central_node)
-
-                    current_edges.sort((a,b) => a.label.localeCompare(b.label));
-
-                    this.selectable_properties = this.sidebarProperties(current_edges);
-
-                    /*console.log(this.parsedData.edges)
-                    console.log(this.current_edges)
-                    console.log(this.selectable_properties)*/
-
-                    this.network = this.buildNetworkData(current_nodes, []);
-
-                    browseNetwork = new Network(refContainer, this.network, options);
-
-                    this.browse_vis_dialog = true;
-                    this.search_loading = false;
-                  } catch (e) {
+                    this.buildNetwork()
+                  }
+                  catch (e) {
                     this.browse_error_text = e;
                     this.browse_error_dialog = true;
                     this.search_loading = false;
@@ -269,6 +235,63 @@ export default {
           })
     },
 
+    buildNetwork: function() {
+      // Set the graph container
+      const refContainer = this.$refs.browseNetworkGraph;
+      this.parsedData = parseDOTNetwork(this.dotData);
+
+      this.central_node = this.centralNode(this.parsedData.nodes);
+
+      let current_nodes = [this.central_node];
+
+      let current_edges = this.parsedData.edges;
+
+      current_edges.sort((a,b) => a.label.localeCompare(b.label));
+      this.selectable_properties = this.sidebarProperties(current_edges);
+
+      this.network = {'nodes': current_nodes, 'edges': []};
+      browseNetwork = new Network(refContainer, this.network, options);
+      browseNetwork.on("doubleClick", this.extendNetwork)
+
+      this.browse_vis_dialog = true;
+      this.search_loading = false;
+    },
+
+    extendNetwork: function() {
+      console.log("testing double click")
+      /*// Package URL as JSON
+      let requestBody = {url: this.url_from_network.toString()};
+
+      // Send URL to API
+      fetch('http://' + backAPI + '/api/model/browse', {
+        method: 'POST',
+        headers: new Headers({
+          'Content-Type': 'application/json',
+        }),
+        body: JSON.stringify(requestBody),
+      })
+          .then(response => {
+            if (!response.ok) {
+              // If response's not ok, then pop up the error
+              this.browse_error_dialog = true;
+              this.browse_error_text = response.status;
+              this.search_loading = false;
+              console.log('Response not 200, instead we got ' + response.status);
+            } else {
+              console.log("Responses inc");
+              response.json().then(content => {
+                if (content.model_dot === "" && content.browse_error !== "") {
+                  // Check if model is empty and display the error from the API
+                  this.browse_error_text = content.browse_error;
+                  this.browse_error_dialog = true;
+                  this.search_loading = false;
+                }
+              })
+            }
+
+          })*/
+    },
+
     resetNetwork: function () {
       browseNetwork.destroy()
     },
@@ -276,10 +299,6 @@ export default {
     centralNode: function(urlNodes) {
       const candidates = urlNodes.filter((node) => node.id.includes(this.url.toString()))
       return candidates.reduce((node1, node2) => node1.id.length <= node2.id.length ? node1 : node2)
-    },
-
-    nodeEdges: function(edges, node) {
-      return edges.filter((edgeNode) => edgeNode.from === node.id || edgeNode.to === node.id)
     },
 
     sidebarProperties: function(edges) {
@@ -309,27 +328,12 @@ export default {
       return sidebar_p
     },
 
-    apacheNodes: function(nodes) {
+    /*apacheNodes: function(nodes) {
       return nodes.filter((node) => node.id.includes('org.apache'))
     },
     apacheEdges: function(edges) {
       return edges.filter((edge) => edge.to.includes('org.apache') || edge.from.includes('org.apache'))
-    },
-
-
-
-    buildNetworkData: function(nodes, edges) {
-      if (!Array.isArray(nodes)) {
-        return {nodes: [nodes], edges: edges}
-      }
-      if (!Array.isArray(edges)) {
-        return {nodes: nodes, edges: [edges]}
-      }
-      if (!Array.isArray(nodes) && !Array.isArray(edges)) {
-        return {nodes: [nodes], edges: [edges]}
-      }
-      return {nodes: nodes, edges: edges}
-    },
+    },*/
 
     updateNetwork: function(added_edges, removed_edges) {
       if (added_edges.length !== 0) {
@@ -337,9 +341,8 @@ export default {
         console.log(added_edges)
         added_edges.forEach(prop => {
           prop.edges.forEach(edge => {
-            if (!this.network.edges.some(net_edge => edge.id === net_edge.id)){
-              this.network.edges.push(edge)
-            }
+            this.network.edges.push(edge)
+
             let to_node = edge.to
             let from_node = edge.from
             if (!this.network.nodes.some(net_node => net_node.id === to_node)){
@@ -355,18 +358,17 @@ export default {
         console.log("got here to")
         removed_edges.forEach(prop => {
           prop.edges.forEach(edge => {
-            if (this.network.edges.some(net_edge => net_edge.id === edge.id)) {
-              this.network.edges = this.network.edges.filter(net_edge => net_edge.id !== edge.id)
-            }
+            this.network.edges = this.network.edges.filter(net_edge => net_edge.id !== edge.id)
+
             let to_node = edge.to
             let from_node = edge.from
             if (!this.network.edges.some(net_edge => net_edge.to === to_node || net_edge.from === to_node)){
-              if (to_node !== this.central_node) {
+              if (to_node !== this.central_node.label) {
                 this.network.nodes = this.network.nodes.filter(net_node => net_node.id !== to_node)
               }
             }
             if (!this.network.edges.some(net_edge => net_edge.to === from_node || net_edge.from === from_node)){
-              if (from_node !== this.central_node) {
+              if (from_node !== this.central_node.label) {
                 this.network.nodes = this.network.nodes.filter(net_node => net_node.id !== from_node)
               }
             }
@@ -377,8 +379,6 @@ export default {
       browseNetwork.setData(this.network)
       browseNetwork.redraw()
     }
-
-
   },
 
   watch: {
