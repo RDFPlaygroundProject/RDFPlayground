@@ -7,19 +7,8 @@
       </v-text-field>
     </v-row>
 
-    <v-row class="mt-2">
-      <v-col
-          class="text-left"
-        >
-        <v-btn
-            color="primary"
-            v-if="network_built"
-            @click="browse_vis_dialog = true"
-        >
-          See Graph
-        </v-btn>
-      </v-col>
-      <v-col class="text-right">
+    <v-row class="mt-0">
+      <v-col class="text-left">
         <v-btn
             color="primary"
             dense
@@ -35,6 +24,16 @@
           </template>
         </v-btn>
       </v-col>
+      <v-col class="text-right">
+        <v-btn
+            color="primary"
+            v-if="network_built"
+            @click="browse_vis_dialog = true"
+        >
+          See Graph
+        </v-btn>
+      </v-col>
+
     </v-row>
     <v-row class="md-0">
       <v-col md="12">
@@ -73,11 +72,11 @@
             </v-btn>
             <v-toolbar-title>Graph Visualization</v-toolbar-title>
             <v-spacer></v-spacer>
-            <!--<v-btn
-                @click="resetNetwork"
+            <v-btn
+                @click="copyTTL"
             >
-              Reset
-            </v-btn>-->
+              Copy .ttl text on clipboard
+            </v-btn>
           </v-toolbar>
           <v-row class="ma-2 mt-0 mb-10">
             <v-col cols="3">
@@ -89,7 +88,6 @@
                   dense
                   return-object
                   v-bind:style="styleBrowserObject.sideProperties"
-                  class="overflow-y-auto"
               ></v-treeview>
             </v-col>
             <v-col cols="9">
@@ -108,16 +106,38 @@
           transition="scale-transition"
       >
         <v-card>
-          <v-col class="text-right">
-              <v-icon @click="extend_network_dialog = false">mdi-close</v-icon>
-          </v-col>
+          <v-card-title>
+            Extend Network
+          </v-card-title>
           <v-card-text>
-              <div class="text-left">
-                You're about to attempt to download a document with name <b>{{url_from_network}}</b>, and extend the current network.
+              <div class="text-justify">
+                <p>You're about to download the following document, and extend the current network:</p>
+                <a v-bind:href=url_from_network target="_blank">
+                  {{url_from_network}}
+                </a>
+                <p></p>
+                <p>Press the Start button to continue.</p>
               </div>
+              <v-alert
+                v-model="extend_network_error"
+                dense
+                text
+                dismissible
+                type="error"
+              >
+                {{ this.browse_error_text }}
+              </v-alert>
 
           </v-card-text>
           <v-card-actions>
+            <v-col class="text-left">
+              <v-btn
+                  dark
+                  @click="extend_network_dialog = false"
+              >
+                  Return
+              </v-btn>
+            </v-col>
             <v-col class="text-right">
               <v-btn
                   color="primary"
@@ -161,6 +181,14 @@ let options = {
       size: 12,
     },
   },
+  interaction: {
+    hover: true
+  },
+  physics: {
+    barnesHut: {
+      gravitationalConstant: -4000
+    },
+  }
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -176,13 +204,16 @@ export default {
     central_node: {},
     dot_data: "",
     extend_network_dialog: false,
+    extend_network_error: false,
     loader: null,
     parsed_data: {},
     network: {},
     network_built: false,
     search_loading: false,
+    searched_documents: [],
     selectable_properties: [],
     selection: [],
+    ttl_data: "",
     url: "",
     url_from_network: "",
     styleBrowserObject: {
@@ -201,6 +232,8 @@ export default {
       },
 
       sideProperties: {
+        flex: 1,
+        overflow: 'scroll',
         height: '840px',
         border: '1px solid #d3d3d3'
       },
@@ -211,21 +244,25 @@ export default {
     searchIri: function () {
       // Sends URL from input to API, and creates a graph network with the response
       let requestBody;
+      this.search_loading = true;
 
-      if (!this.network_built || !this.browse_vis_dialog){
+      // First search case
+      if (!this.extend_network_dialog){
         // Restart variables
         this.browse_error_dialog = false;
+        this.central_node = {};
         this.parsed_data = {};
-        this.search_loading = true;
+        this.searched_documents = [];
+        this.selectable_properties = [];
+        this.selection = [];
+        this.dot_data = "";
 
-        // Restart network
         if (this.network_built) {
           browseNetwork.destroy();
           this.network_built = false;
         }
 
         // Validate URL through REGEX
-
         if(!this.validURL(this.url)) {
           this.browse_error_text = "Not a valid URL. Try this instead \n" +
               "---> http://dbpedia.org/resource/University_of_Chile <---";
@@ -234,15 +271,19 @@ export default {
           return
         }
 
-        // Package URL as JSON
         requestBody = { url: this.url.toString() };
       }
-      if (this.network_built && this.browse_vis_dialog) {
+      // Extend Network case
+      else {
+        if (this.searched_documents.includes(this.url_from_network)) {
+          this.browse_error_text = "The document from this URL its already on the graph";
+          this.extend_network_error = true;
+          this.search_loading = false
+          return;
+        }
         requestBody = { url: this.url_from_network.toString() };
       }
 
-      console.log("uri safe")
-      console.log(requestBody)
       // Send URL to API
       fetch('http://' + backAPI + '/api/model/browse', {
         method: 'POST',
@@ -254,9 +295,12 @@ export default {
           .then(response => {
             if (!response.ok) {
               // If response's not ok, then pop up the error
-              this.browse_error_dialog = true;
-              this.browse_error_text = response.status;
+              if (!this.extend_network_dialog) this.browse_error_dialog = true;
+              else this.extend_network_error = true;
+
               this.search_loading = false;
+              this.browse_error_text = response.status;
+
               console.log('Response not 200, instead we got ' + response.status);
             }
             else {
@@ -264,25 +308,35 @@ export default {
               response.json().then(content => {
                 if (content.model_dot === "" && content.browse_error !== "") {
                   // Check if model is empty and display the error from the API
+                  if (!this.extend_network_dialog) this.browse_error_dialog = true;
+                  else this.extend_network_error = true;
+
                   this.browse_error_text = content.browse_error;
-                  this.browse_error_dialog = true;
                   this.search_loading = false;
                 }
                 else {
                   this.dot_data = content.model_dot
+                  this.ttl_data += content.model_ttl
                   try {
-                    if (this.network_built && this.browse_vis_dialog) {
-                      console.log("extend_network")
-                      this.extendNetwork()
-                    }
-                    if (!this.network_built || !this.browse_vis_dialog) {
-                      console.log("build network")
+                    // Build Network for the 1st time
+                    if (!this.extend_network_dialog) {
                       this.buildNetwork()
+                      this.search_loading = false;
+                      this.network_built = true;
+                      this.browse_vis_dialog = true;
+                    }
+                    // Extend the network
+                    else {
+                      this.extendNetwork()
+                      this.searched_documents.push(this.url_from_network)
+                      this.search_loading = false;
+                      this.extend_network_dialog = false;
                     }
                   }
                   catch (e) {
+                    if (!this.extend_network_dialog) this.browse_error_dialog = true;
+                    else this.extend_network_error = true;
                     this.browse_error_text = e;
-                    this.browse_error_dialog = true;
                     this.search_loading = false;
                   }
                 }
@@ -290,6 +344,8 @@ export default {
             }
           })
           .catch(error => {
+            if (!this.extend_network_dialog) this.browse_error_dialog = true;
+            else this.extend_network_error = true;
             this.browse_error_text = error;
             this.browse_error_dialog = true;
           })
@@ -300,52 +356,53 @@ export default {
       const refContainer = this.$refs.browseNetworkGraph;
       this.parsed_data = parseDOTNetwork(this.dot_data);
 
+      // Find the central node
       this.central_node = this.centralNode(this.parsed_data.nodes);
-
       let current_nodes = [this.central_node];
       let current_edges = this.parsed_data.edges;
 
+      // Sort edges, add hover info, and create sidebar tree-view
       current_edges.sort((a,b) => a.label.localeCompare(b.label));
+      this.addNodeTitle(this.parsed_data.nodes)
       this.selectable_properties = this.sidebarProperties(current_edges);
 
+      // Build network and add "doubleClick event"
       this.network = {'nodes': current_nodes, 'edges': []};
       browseNetwork = new Network(refContainer, this.network, options);
 
-      this.browse_vis_dialog = true;
+
       browseNetwork.on("doubleClick", this.doubleClickCallback)
 
-      this.search_loading = false;
-      this.network_built = true;
+      this.searched_documents.push(this.central_node.id)
     },
 
     doubleClickCallback: function(params) {
       if (params.nodes.length !== 0) {
-        this.url_from_network = params.nodes[0];
-        this.extend_network_dialog = true;
+        let node = this.parsed_data.nodes.find(o => o.id === params.nodes[0])
+        if (node.shape === "ellipse") {
+          this.url_from_network = params.nodes[0];
+          this.extend_network_error = false;
+          this.extend_network_dialog = true;
+        }
       }
     },
 
     extendNetwork: function() {
-      console.log(this.parsed_data.edges.length, "pd edges length")
-      console.log(this.parsed_data.nodes.length, "pd nodes length")
-
+      // Parse new data, merge it with current data and de-duplicate
       let new_parsed_data = parseDOTNetwork(this.dot_data);
+
 
       let new_nodes = [... new Set([...this.parsed_data.nodes, ...new_parsed_data.nodes])]
       let new_edges = [... new Set([...this.parsed_data.edges, ...new_parsed_data.edges])]
-
-      console.log(new_edges.length, "new set edges length")
-      console.log(new_nodes.length, "new set nodes length")
+      new_edges.sort((a,b) => a.label.localeCompare(b.label));
 
       this.parsed_data.edges = this.getUniqueItemsByProperties(new_edges, ['to', 'label', 'from'])
-      console.log(this.parsed_data.edges.length, "new parsed data edges length")
       this.parsed_data.nodes = this.getUniqueItemsByProperties(new_nodes, ['id', 'label', 'shape'])
-      console.log(this.parsed_data.nodes.length, "new parsed data nodes length")
 
+      this.addNodeTitle(this.parsed_data.nodes);
+      this.selectable_properties = this.sidebarProperties(this.parsed_data.edges)
 
-      this.extend_network_dialog = false;
     },
-
 
     centralNode: function(urlNodes) {
       const candidates = urlNodes.filter((node) => node.id.includes(this.url.toString()))
@@ -356,14 +413,12 @@ export default {
       let sidebar_p = []
       let i = 1
       edges.forEach(edge => {
-        let new_edge = edge;
-
-        let property ={"id":i ,"name": edge.label, "edges": [new_edge]};
+        let property ={"id":i ,"name": edge.label, "edges": [edge]};
         let added_property = false
 
         sidebar_p.forEach(prop => {
-          if (prop.name === new_edge.label) {
-            prop.edges.push(new_edge)
+          if (prop.name === edge.label) {
+            prop.edges.push(edge)
             added_property = true
           }
         })
@@ -376,6 +431,38 @@ export default {
         prop.name = prop.name + " (" + prop.edges.length.toString() + ")"
       })
       return sidebar_p
+    },
+
+    addNodeTitle: function(nodes) {
+      nodes.forEach(node => {
+        if (!('title' in node)){
+          if (node.shape === "ellipse"){
+            node.title = node.id
+          }
+          if (node.shape === "record") {
+            let title = ""
+            if (node.id.length > 60) {
+              title += node.id
+              node.label = node.label.substring(0, 30) + "..."
+            }
+            if ('lang' in node){
+              title += "\nlang:" + node.lang
+            }
+            if (title.length !== 0) {
+              node.title = this.prettyTitle(title)
+            }
+          }
+        }
+      })
+    },
+
+    prettyTitle: function(title) {
+      const container = document.createElement("div")
+      container.innerText = title
+          .match(/.{1,128}(\s|$)/g)
+          .map(p => p + "\n")
+          .join('')
+      return container
     },
 
     /*apacheNodes: function(nodes) {
@@ -424,9 +511,13 @@ export default {
           })
         })
       }
-      console.log(this.network)
-      browseNetwork.setData(this.network)
-      browseNetwork.redraw()
+      if (this.network_built){
+        browseNetwork.setData(this.network)
+        browseNetwork.redraw()
+      }
+    },
+    copyTTL: function () {
+      navigator.clipboard.writeText(this.ttl_data)
     },
 
     isPropValuesEqual: function(subject, target, propNames) {
@@ -511,4 +602,5 @@ export default {
     transform: rotate(360deg);
   }
 }
+
 </style>
