@@ -26,7 +26,8 @@
       </v-col>
       <v-col class="text-right">
         <v-btn
-            color="primary"
+            color="green darken-3"
+            class="white--text"
             v-if="network_built"
             @click="browse_vis_dialog = true"
         >
@@ -74,20 +75,29 @@
             <v-spacer></v-spacer>
             <v-btn
                 @click="copyTTL"
+                :color = "copy_clipboard_color"
+                :loading="copy_clipboard_loading"
+                :disabled="copy_clipboard_loading"
             >
               Copy .ttl text on clipboard
             </v-btn>
           </v-toolbar>
-          <v-row class="ma-2 mt-0 mb-10">
+          <v-row class="ma-2 mt-0 mb-10 ml-0">
             <v-col cols="3">
+              <v-toolbar
+                  dense
+                  dark
+              >
+                <v-toolbar-title>Documents and Properties</v-toolbar-title>
+              </v-toolbar>
               <v-treeview
                   v-model="selection"
+                  v-bind:style="styleBrowserObject.sideProperties"
                   :items="selectable_properties"
+                  activatable
                   selectable
-                  selection-type="leaf"
                   dense
                   return-object
-                  v-bind:style="styleBrowserObject.sideProperties"
               ></v-treeview>
             </v-col>
             <v-col cols="9">
@@ -201,6 +211,8 @@ export default {
     browse_error_text: "",
     browse_error_dialog: false,
     browse_vis_dialog: false,
+    copy_clipboard_loading: false,
+    copy_clipboard_color: "dark",
     central_node: {},
     dot_data: "",
     extend_network_dialog: false,
@@ -213,6 +225,7 @@ export default {
     searched_documents: [],
     selectable_properties: [],
     selection: [],
+    sidebar_id: 1,
     ttl_data: "",
     url: "",
     url_from_network: "",
@@ -234,7 +247,7 @@ export default {
       sideProperties: {
         flex: 1,
         overflow: 'scroll',
-        height: '840px',
+        height: '792px',
         border: '1px solid #d3d3d3'
       },
     }
@@ -256,6 +269,7 @@ export default {
         this.selectable_properties = [];
         this.selection = [];
         this.dot_data = "";
+        this.sidebar_id = 1;
 
         if (this.network_built) {
           browseNetwork.destroy();
@@ -328,7 +342,6 @@ export default {
                     // Extend the network
                     else {
                       this.extendNetwork()
-                      this.searched_documents.push(this.url_from_network)
                       this.search_loading = false;
                       this.extend_network_dialog = false;
                     }
@@ -363,16 +376,14 @@ export default {
 
       // Sort edges, add hover info, and create sidebar tree-view
       current_edges.sort((a,b) => a.label.localeCompare(b.label));
-      this.addNodeTitle(this.parsed_data.nodes)
-      this.selectable_properties = this.sidebarProperties(current_edges);
+      this.addNodeTitle(this.parsed_data.nodes);
+      this.addEdgeDocument(this.parsed_data.edges, this.central_node.id);
+      this.sidebarProperties(current_edges);
 
       // Build network and add "doubleClick event"
       this.network = {'nodes': current_nodes, 'edges': []};
       browseNetwork = new Network(refContainer, this.network, options);
-
-
       browseNetwork.on("doubleClick", this.doubleClickCallback)
-
       this.searched_documents.push(this.central_node.id)
     },
 
@@ -390,18 +401,18 @@ export default {
     extendNetwork: function() {
       // Parse new data, merge it with current data and de-duplicate
       let new_parsed_data = parseDOTNetwork(this.dot_data);
-
+      this.addEdgeDocument(new_parsed_data.edges, this.url_from_network)
+      this.addNodeTitle(new_parsed_data.nodes);
+      new_parsed_data.edges.sort((a,b) => a.label.localeCompare(b.label));
 
       let new_nodes = [... new Set([...this.parsed_data.nodes, ...new_parsed_data.nodes])]
       let new_edges = [... new Set([...this.parsed_data.edges, ...new_parsed_data.edges])]
-      new_edges.sort((a,b) => a.label.localeCompare(b.label));
 
       this.parsed_data.edges = this.getUniqueItemsByProperties(new_edges, ['to', 'label', 'from'])
       this.parsed_data.nodes = this.getUniqueItemsByProperties(new_nodes, ['id', 'label', 'shape'])
 
-      this.addNodeTitle(this.parsed_data.nodes);
-      this.selectable_properties = this.sidebarProperties(this.parsed_data.edges)
-
+      this.sidebarProperties(new_parsed_data.edges)
+      this.searched_documents.push(this.url_from_network)
     },
 
     centralNode: function(urlNodes) {
@@ -410,27 +421,29 @@ export default {
     },
 
     sidebarProperties: function(edges) {
-      let sidebar_p = []
-      let i = 1
+      let document_container = {"id": this.sidebar_id, "name": edges[0].title, "children": []}
+      this.selectable_properties.push(document_container)
+      let document_index = (this.selectable_properties.length - 1)
+      this.sidebar_id += 1
+
       edges.forEach(edge => {
-        let property ={"id":i ,"name": edge.label, "edges": [edge]};
+        let property ={"id":this.sidebar_id ,"name": edge.label, "edges": [edge]};
         let added_property = false
 
-        sidebar_p.forEach(prop => {
+        this.selectable_properties[document_index].children.forEach(prop => {
           if (prop.name === edge.label) {
             prop.edges.push(edge)
             added_property = true
           }
         })
         if (!added_property) {
-          sidebar_p.push(property)
+          this.selectable_properties[document_index].children.push(property)
         }
-        i += 1
+        this.sidebar_id += 1
       })
-      sidebar_p.forEach(prop => {
+      this.selectable_properties[document_index].children.forEach(prop => {
         prop.name = prop.name + " (" + prop.edges.length.toString() + ")"
       })
-      return sidebar_p
     },
 
     addNodeTitle: function(nodes) {
@@ -452,6 +465,14 @@ export default {
               node.title = this.prettyTitle(title)
             }
           }
+        }
+      })
+    },
+
+    addEdgeDocument: function(edges, title) {
+      edges.forEach(edge => {
+        if (!('title' in edge)) {
+          edge.title = "Document: " + title
         }
       })
     },
@@ -516,8 +537,16 @@ export default {
         browseNetwork.redraw()
       }
     },
+
     copyTTL: function () {
-      navigator.clipboard.writeText(this.ttl_data)
+      try {
+        this.loader = this.copy_clipboard_loading;
+        navigator.clipboard.writeText(this.ttl_data);
+        this.copy_clipboard_color = "green darken-3";
+        setTimeout(() => this.copy_clipboard_color = "dark", 3000);
+      } catch (e) {
+        console.log(e)
+      }
     },
 
     isPropValuesEqual: function(subject, target, propNames) {
