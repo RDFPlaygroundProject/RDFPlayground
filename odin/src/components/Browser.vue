@@ -73,15 +73,80 @@
             </v-btn>
             <v-toolbar-title>Graph Visualization</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-btn
-                @click="copyTTL"
-                :color = "copy_clipboard_color"
-                :loading="copy_clipboard_loading"
-                :disabled="copy_clipboard_loading"
+            <v-tooltip bottom>
+              <template v-slot:activator="{on, attrs}">
+                <v-btn
+                    icon
+                    @click="copyTTL"
+                    :color = "copy_clipboard_color"
+                    :loading="copy_clipboard_loading"
+                    :disabled="copy_clipboard_loading"
+                    v-bind="attrs"
+                    v-on="on"
+                >
+                  <v-icon>mdi-content-copy</v-icon>
+                </v-btn>
+              </template>
+              <span>Copy TTL document on clipboard</span>
+            </v-tooltip>
+            <v-tooltip bottom>
+              <template v-slot:activator="{on, attrs}">
+                <v-btn
+                    icon
+                    @click="help_dialog = true"
+                    class="ml-3"
+                    v-bind="attrs"
+                    v-on="on"
+                >
+                  <v-icon>mdi-information-outline</v-icon>
+                </v-btn>
+              </template>
+              <span>Important notes</span>
+            </v-tooltip>
+            <v-dialog
+                v-model="help_dialog"
+                hide-overlay
+                max-width="700px"
             >
-              Copy .ttl text on clipboard
-            </v-btn>
+              <v-card
+                  dark
+                  tile>
+                <v-toolbar>
+                  <v-toolbar-title>Important Notes</v-toolbar-title>
+                  <v-spacer></v-spacer>
+                  <v-btn
+                      icon
+                      @click="help_dialog = false"
+                  >
+                    <v-icon>mdi-close</v-icon>
+                  </v-btn>
+                </v-toolbar>
+                <v-card-text>
+                  <v-list
+                      three-line
+                      disabled
+                  >
+                    <v-list-item-group>
+                      <v-list-item
+                          v-for="(note, i) in notes"
+                          :key="i"
+                      >
+                        <v-list-item-icon>
+                          <v-icon v-text="note.icon"></v-icon>
+                        </v-list-item-icon>
+                        <v-list-item-content>
+                          <v-list-item-title v-text="note.text"></v-list-item-title>
+                          <v-list-item-subtitle v-text="note.subtext"></v-list-item-subtitle>
+                        </v-list-item-content>
+                      </v-list-item>
+
+                    </v-list-item-group>
+                  </v-list>
+                </v-card-text>
+              </v-card>
+            </v-dialog>
           </v-toolbar>
+
           <v-row class="ma-2 mt-0 mb-10 ml-0">
             <v-col cols="3">
               <v-toolbar
@@ -94,8 +159,9 @@
                   v-model="selection"
                   v-bind:style="styleBrowserObject.sideProperties"
                   :items="selectable_properties"
-                  activatable
                   selectable
+                  activatable
+                  :open-on-click="true"
                   dense
                   return-object
               ></v-treeview>
@@ -115,7 +181,7 @@
           persistent
           transition="scale-transition"
       >
-        <v-card>
+        <v-card tile>
           <v-card-title>
             Extend Network
           </v-card-title>
@@ -217,6 +283,7 @@ export default {
     dot_data: "",
     extend_network_dialog: false,
     extend_network_error: false,
+    help_dialog: false,
     loader: null,
     parsed_data: {},
     network: {},
@@ -229,6 +296,26 @@ export default {
     ttl_data: "",
     url: "",
     url_from_network: "",
+    notes: [
+      { text: "Double click interaction on nodes",
+        subtext: "This event will popup a dialog where you can extend the " +
+            "network. Only URL-like nodes will trigger the dialog.",
+        icon:"mdi-gesture-double-tap"
+      },
+      { text: "Mouseover nodes and edges on graph",
+        subtext: "This will show more information about the element." +
+            " Edges have their document name, and nodes their full name," +
+            " or description, language and datatype if available, if it's a literal.",
+        icon:"mdi-information-variant"
+      },
+      { text: "Documents and Properties sidebar",
+        subtext: "You can select properties individually or the entire document," +
+            " but beware of selecting large documents (> 1000 properties);" +
+            " it'll freeze your browser for a while.",
+        icon:"mdi-format-list-bulleted"
+      },
+
+    ],
     styleBrowserObject: {
       dotContainer: {
         flex: 1,
@@ -472,7 +559,7 @@ export default {
     addEdgeDocument: function(edges, title) {
       edges.forEach(edge => {
         if (!('title' in edge)) {
-          edge.title = "Document: " + title
+          edge.title = "doc: " + title
         }
       })
     },
@@ -542,7 +629,7 @@ export default {
       try {
         this.loader = this.copy_clipboard_loading;
         navigator.clipboard.writeText(this.ttl_data);
-        this.copy_clipboard_color = "green darken-3";
+        this.copy_clipboard_color = "success";
         setTimeout(() => this.copy_clipboard_color = "dark", 3000);
       } catch (e) {
         console.log(e)
