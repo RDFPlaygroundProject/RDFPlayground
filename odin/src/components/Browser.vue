@@ -311,7 +311,7 @@ export default {
       { text: "Documents and Properties sidebar",
         subtext: "You can select properties individually or the entire document," +
             " but beware of selecting large documents (> 1000 properties);" +
-            " it'll freeze your browser for a while.",
+            " it'll freeze your browser for a long time.",
         icon:"mdi-format-list-bulleted"
       },
 
