@@ -45,7 +45,7 @@
                 v-on="on"
               >
                 Text
-                <v-icon>mdi-text-subject</v-icon>
+                <v-icon>mdi-text-long</v-icon>
               </v-tab>
             </template>
             <span>Enter your RDF data in Turtle syntax.</span>
@@ -1068,11 +1068,6 @@
         resultFromCol: {
           backgroundColor: 'secondary',
         },
-        URIinput: {
-          width: '100%',
-          border: '1px solid black',
-          marginTop: '6px'
-        }
       },
       prefixcc_dialog: false,
       prefixcc_loading: false,

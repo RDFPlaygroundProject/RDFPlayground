@@ -34,8 +34,25 @@
           See Graph
         </v-btn>
       </v-col>
-
     </v-row>
+
+    <v-row class="md-0">
+      <v-col class="" md="7">
+        <v-alert
+            type="info"
+            class="text-justify"
+            dense
+        >
+          <p>Here are some URL examples:</p>
+          <ul>
+            <li>http://dbpedia.org/resource/Isaac_Asimov</li>
+            <li>https://sws.geonames.org/1668284</li>
+            <li>http://www.wikidata.org/entity/Q466</li>
+          </ul>
+        </v-alert>
+      </v-col>
+    </v-row>
+
     <v-row class="md-0">
       <v-col md="12">
         <v-alert
@@ -176,7 +193,7 @@
       </v-dialog>
       <v-dialog
           v-model="extend_network_dialog"
-          width="500"
+          width="700"
           height="300"
           persistent
           transition="scale-transition"
@@ -356,6 +373,7 @@ export default {
         this.selectable_properties = [];
         this.selection = [];
         this.dot_data = "";
+        this.ttl_data = "";
         this.sidebar_id = 1;
 
         if (this.network_built) {
@@ -448,6 +466,7 @@ export default {
             else this.extend_network_error = true;
             this.browse_error_text = error;
             this.browse_error_dialog = true;
+            this.search_loading = false;
           })
     },
 
@@ -455,7 +474,6 @@ export default {
       // Set the graph container
       const refContainer = this.$refs.browseNetworkGraph;
       this.parsed_data = parseDOTNetwork(this.dot_data);
-
       // Find the central node
       this.central_node = this.centralNode(this.parsed_data.nodes);
       let current_nodes = [this.central_node];
@@ -548,6 +566,9 @@ export default {
             if ('lang' in node){
               title += "\nlang:" + node.lang
             }
+            if ('datatype' in node){
+              title += "\ndatatype:" + node.datatype
+            }
             if (title.length !== 0) {
               node.title = this.prettyTitle(title)
             }
@@ -625,10 +646,10 @@ export default {
       }
     },
 
-    copyTTL: function () {
+    copyTTL: async function () {
       try {
         this.loader = this.copy_clipboard_loading;
-        navigator.clipboard.writeText(this.ttl_data);
+        await navigator.clipboard.writeText(this.ttl_data);
         this.copy_clipboard_color = "success";
         setTimeout(() => this.copy_clipboard_color = "dark", 3000);
       } catch (e) {
