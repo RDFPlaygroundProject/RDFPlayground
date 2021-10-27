@@ -78,7 +78,7 @@ open class DOTShell(
                         when {
                             node.literal.value.toString().isNotEmpty() ->
                                 out.println(
-                                    "\"${prettyNode(node)}\" [label=\"${prettyNode(node)}\"," +
+                                    "\"${prettyNode(node)}\" [label=\"${prettyLiteralLabel(node)}\"," +
                                             "shape=record,color=\"${colors.literal}\",${langLiteral(node)}" +
                                             "${dataTypeLiteral(node)}]"
                                 )
@@ -122,18 +122,30 @@ open class DOTShell(
     }
 
     private fun prettyTriple(triple: Triple): String {
-        return triple.`object`.literal.value.toString().replace("\"", "\'" )
+        return when (triple.`object`.literalLanguage) {
+            "" -> triple.`object`.literal.lexicalForm.toString().replace("\"", "\'")
+            else -> triple.`object`.literal.lexicalForm.toString().replace("\"", "\'") +
+                    "@" + triple.`object`.literalLanguage
+        }
     }
 
     private fun prettyNode(node: Node): String {
-        return node.literal.value.toString().replace("\"", "\'" )
+        return when (node.literalLanguage) {
+            "" -> node.literal.lexicalForm.toString().replace("\"", "\'")
+            else -> node.literal.lexicalForm.toString().replace("\"", "\'") +
+                    "@" + node.literalLanguage
+        }
+    }
+
+    private fun prettyLiteralLabel(node: Node): String {
+        return node.literal.lexicalForm.toString().replace("\"", "\'")
     }
 
     private fun langLiteral(node: Node): String {
-        if (node.literalLanguage != "") {
-            return "lang= \"${node.literalLanguage}\","
+        return when (node.literalLanguage) {
+            "" -> ""
+            else -> "lang= \"${node.literalLanguage}\","
         }
-        return ""
     }
 
     private fun dataTypeLiteral(node: Node): String {
