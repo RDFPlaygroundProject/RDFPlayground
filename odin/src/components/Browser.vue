@@ -96,8 +96,8 @@
               color="green darken-3"
               @click="ttl_data_dialog = !ttl_data_dialog"
             >
-              <h v-if="ttl_data_dialog">Graph Visualization</h>
-              <h v-else>Turtle Document</h>
+              <span v-if="ttl_data_dialog">Graph Visualization</span>
+              <span v-else>Turtle Document</span>
             </v-btn>
             <v-tooltip bottom>
               <template v-slot:activator="{on, attrs}">
@@ -157,7 +157,7 @@
           </v-toolbar>
 
           <v-row class="ma-2 mt-0 mb-10 ml-0">
-            <v-col cols="3">
+            <v-col cols="4">
               <v-toolbar
                   dense
                   dark
@@ -176,7 +176,7 @@
                   return-object
               ></v-treeview>
             </v-col>
-            <v-col cols="9">
+            <v-col cols="8">
               <div ref="browseNetworkGraph"
                    v-bind:style="styleBrowserObject.dotFullscreenContainer"
                    v-show="!ttl_data_dialog"
@@ -426,7 +426,11 @@ export default {
               else this.extend_network_error = true;
 
               this.search_loading = false;
-              this.browse_error_text = 'Response not 200, instead we got ' + response.status
+              response.json().then(content => {
+                this.browse_error_text = 'Response not 200, instead we got ' + response.status + '. Error: '
+                    + content.browse_error
+              })
+
             }
             else {
               response.json().then(content => {
@@ -440,7 +444,6 @@ export default {
                 }
                 else {
                   this.dot_data = content.model_dot
-                  console.log(this.dot_data)
                   try {
                     // Build Network for the 1st time
                     if (!this.extend_network_dialog) {
@@ -485,8 +488,7 @@ export default {
       // Set the graph container
       const refContainer = this.$refs.browseNetworkGraph;
       this.parsed_data = parseDOTNetwork(this.dot_data);
-      console.log(this.parsed_data.edges)
-      console.log(this.parsed_data.nodes)
+
       // Find the central node
       this.central_node = this.centralNode(this.parsed_data.nodes);
       let current_nodes = [this.central_node];
@@ -496,7 +498,7 @@ export default {
       current_edges.sort((a,b) => a.label.localeCompare(b.label));
       this.addNodeTitle(this.parsed_data.nodes);
       this.addEdgeDocument(this.parsed_data.edges, this.central_node.id);
-      this.sidebarProperties(current_edges);
+      this.sidebarProperties(current_edges, this.central_node.id);
 
       // Build network and add "doubleClick event"
       this.network = {nodes: current_nodes, edges: []};
@@ -529,7 +531,7 @@ export default {
       this.parsed_data.edges = this.getUniqueItemsByProperties(new_edges, ['to', 'label', 'from'])
       this.parsed_data.nodes = this.getUniqueItemsByProperties(new_nodes, ['id', 'label', 'shape'])
 
-      this.sidebarProperties(new_parsed_data.edges)
+      this.sidebarProperties(new_parsed_data.edges, this.url_from_network)
       this.searched_documents.push(this.url_from_network)
     },
 
@@ -538,8 +540,9 @@ export default {
       return candidates.reduce((node1, node2) => node1.id.length <= node2.id.length ? node1 : node2)
     },
 
-    sidebarProperties: function(edges) {
-      let document_container = {"id": this.sidebar_id, "name": edges[0].title, "children": []}
+    sidebarProperties: function(edges, doc_title) {
+      let truncate_title = doc_title.substring(doc_title.lastIndexOf("://")+3)
+      let document_container = {"id": this.sidebar_id, "name": truncate_title, "children": []}
       this.selectable_properties.push(document_container)
       let document_index = (this.selectable_properties.length - 1)
       this.sidebar_id += 1
@@ -568,6 +571,9 @@ export default {
       nodes.forEach(node => {
         if (!('title' in node)){
           if (node.shape === "ellipse"){
+            if (node.id.length > 60) {
+              node.label = node.label.substring(0, 30) + "..."
+            }
             node.title = node.id
           }
           if (node.shape === "record") {
@@ -700,7 +706,6 @@ export default {
 
     selection: {
       handler(val, oldVal) {
-        console.log(val)
         let new_edges = val.filter(edges => !oldVal.includes(edges))
         let removed_edges = oldVal.filter (edges => !val.includes(edges))
         this.updateNetwork(new_edges, removed_edges)

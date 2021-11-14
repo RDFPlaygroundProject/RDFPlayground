@@ -117,8 +117,12 @@ open class DOTShell(
     private fun prettyLabel(node: Node): String {
         return when (node.prefix(prefixMap)) {
             null -> node.uri
-            else -> "${node.prefix(prefixMap)}:${node.localName}"
+            else -> "${node.prefix(prefixMap)}:${nodeLocalName(node)}"
         }
+    }
+
+    private fun nodeLocalName(node: Node): String {
+        return node.getURI().substring(Math.max(node.getURI().lastIndexOf('/'),node.getURI().lastIndexOf('#'))+1)
     }
 
     private fun prettyTriple(triple: Triple): String {
