@@ -1,12 +1,14 @@
 <template>
   <v-container>
+    <!-- Left-side tab -->
+    <!-- Input field -->
     <v-row class="ma-0">
       <v-text-field
           v-model="url"
           label="Insert an URL here">
       </v-text-field>
     </v-row>
-
+    <!-- Search and See Graph buttons -->
     <v-row class="mt-0">
       <v-col class="text-left">
         <v-btn
@@ -35,7 +37,7 @@
         </v-btn>
       </v-col>
     </v-row>
-
+    <!-- Examples panel -->
     <v-row class="md-0">
       <v-col>
         <v-expansion-panels tile>
@@ -54,7 +56,7 @@
         </v-expansion-panels>
       </v-col>
     </v-row>
-
+    <!-- Error dialog -->
     <v-row class="md-0">
       <v-col md="12">
         <v-alert
@@ -68,6 +70,7 @@
       </v-col>
     </v-row>
 
+    <!-- Graph Visualization dialog -->
     <v-row class="ma-2 mt-0 mb-10">
       <v-dialog
           v-model="browse_vis_dialog"
@@ -77,6 +80,7 @@
           transition="dialog-bottom-transition"
       >
         <v-card>
+          <!-- Toolbar -->
           <v-toolbar
               dark
               color="primary"
@@ -157,6 +161,7 @@
           </v-toolbar>
 
           <v-row class="ma-2 mt-0 mb-10 ml-0">
+            <!-- Documents and Properties sidebar -->
             <v-col cols="4">
               <v-toolbar
                   dense
@@ -176,6 +181,7 @@
                   return-object
               ></v-treeview>
             </v-col>
+            <!-- Document Visualization (graph and text) -->
             <v-col cols="8">
               <div ref="browseNetworkGraph"
                    v-bind:style="styleBrowserObject.dotFullscreenContainer"
@@ -198,6 +204,7 @@
           </v-row>
         </v-card>
       </v-dialog>
+      <!-- Extend network dialog -->
       <v-dialog
           v-model="extend_network_dialog"
           width="700"
@@ -368,6 +375,7 @@ export default {
   methods: {
     searchIri: function () {
       // Sends URL from input to API, and creates a graph network with the response
+      // Works to create the graph, and to extend it
       let requestBody;
       this.search_loading = true;
 
@@ -508,6 +516,7 @@ export default {
     },
 
     doubleClickCallback: function(params) {
+      // Trigger to open Extend Network dialog
       if (params.nodes.length !== 0) {
         let node = this.parsed_data.nodes.find(o => o.id === params.nodes[0])
         if (node.shape === "ellipse") {
@@ -536,11 +545,13 @@ export default {
     },
 
     centralNode: function(urlNodes) {
+      // Search for the node which id is equal or most similar to the URI input
       const candidates = urlNodes.filter((node) => node.id.includes(this.url.toString()))
       return candidates.reduce((node1, node2) => node1.id.length <= node2.id.length ? node1 : node2)
     },
 
     sidebarProperties: function(edges, doc_title) {
+      // Creates a structure to handle documents and properties sidebar
       let truncate_title = doc_title.substring(doc_title.lastIndexOf("://")+3)
       let document_container = {"id": this.sidebar_id, "name": truncate_title, "children": []}
       this.selectable_properties.push(document_container)
@@ -568,6 +579,7 @@ export default {
     },
 
     addNodeTitle: function(nodes) {
+      // Adds title to nodes, in order to handle large literals for mousehover interaction
       nodes.forEach(node => {
         if (!('title' in node)){
           if (node.shape === "ellipse"){
@@ -597,6 +609,7 @@ export default {
     },
 
     addEdgeDocument: function(edges, title) {
+      // Add document name to Edges for mousehover interaction
       edges.forEach(edge => {
         if (!('title' in edge)) {
           edge.title = "doc: " + title
@@ -605,6 +618,7 @@ export default {
     },
 
     prettyTitle: function(title) {
+      // Prettify large literals
       const container = document.createElement("div")
       container.innerText = title
           .match(/.{1,128}(\s|$)/g)
@@ -614,6 +628,7 @@ export default {
     },
 
     updateNetwork: function(added_edges, removed_edges) {
+      // Handler for graph interaction. Updates the graph with new nodes and edges, or removes them
       if (added_edges.length !== 0) {
         added_edges.forEach(prop => {
           prop.edges.forEach(edge => {
@@ -658,6 +673,7 @@ export default {
     },
 
     mergeTTL: function (ttl1,ttl2) {
+      // Merge the TTL documents whenever the number of documents increase.
       let prefixes = [];
       let file_1 = ttl1.split("\n");
       let file_2 = ttl2.split("\n");
@@ -697,6 +713,7 @@ export default {
 
   watch: {
     loader() {
+      // Loader icon
       const l = this.loader
       this[l] = !this[l]
       setTimeout(() => (this.search_loading = false), 1000)
@@ -706,6 +723,7 @@ export default {
 
     selection: {
       handler(val, oldVal) {
+        // Documents and properties handler
         let new_edges = val.filter(edges => !oldVal.includes(edges))
         let removed_edges = oldVal.filter (edges => !val.includes(edges))
         this.updateNetwork(new_edges, removed_edges)
