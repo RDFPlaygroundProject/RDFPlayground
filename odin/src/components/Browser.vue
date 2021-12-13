@@ -1,12 +1,14 @@
 <template>
   <v-container>
+    <!-- Left-side tab -->
+    <!-- Input field -->
     <v-row class="ma-0">
       <v-text-field
           v-model="url"
           label="Insert an URL here">
       </v-text-field>
     </v-row>
-
+    <!-- Search and See Graph buttons -->
     <v-row class="mt-0">
       <v-col class="text-left">
         <v-btn
@@ -35,32 +37,32 @@
         </v-btn>
       </v-col>
     </v-row>
-
+    <!-- Examples panel -->
     <v-row class="md-0">
-      <v-col class="" md="7">
-        <v-alert
-            type="info"
-            class="text-justify"
-            dense
-        >
-          <p>Here are some URL examples:</p>
-          <ul>
-            <li>http://dbpedia.org/resource/Isaac_Asimov</li>
-            <li>https://sws.geonames.org/1668284</li>
-            <li>http://www.wikidata.org/entity/Q466</li>
-          </ul>
-        </v-alert>
+      <v-col>
+        <v-expansion-panels tile>
+          <v-expansion-panel>
+            <v-expansion-panel-header color="green darken-3" class="white--text">
+              URL Examples
+            </v-expansion-panel-header>
+            <v-expansion-panel-content class="mt-4 text-justify">
+              <ul>
+                <li>http://dbpedia.org/resource/Isaac_Asimov</li>
+                <li>https://sws.geonames.org/1668284</li>
+                <li>http://www.wikidata.org/entity/Q466</li>
+              </ul>
+            </v-expansion-panel-content>
+          </v-expansion-panel>
+        </v-expansion-panels>
       </v-col>
     </v-row>
-
+    <!-- Error dialog -->
     <v-row class="md-0">
       <v-col md="12">
         <v-alert
             v-model="browse_error_dialog"
             dense
-            text
             dismissible
-            prominent
             type="error"
         >
           {{ this.browse_error_text }}
@@ -68,6 +70,7 @@
       </v-col>
     </v-row>
 
+    <!-- Graph Visualization dialog -->
     <v-row class="ma-2 mt-0 mb-10">
       <v-dialog
           v-model="browse_vis_dialog"
@@ -77,6 +80,7 @@
           transition="dialog-bottom-transition"
       >
         <v-card>
+          <!-- Toolbar -->
           <v-toolbar
               dark
               color="primary"
@@ -90,22 +94,15 @@
             </v-btn>
             <v-toolbar-title>Graph Visualization</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-tooltip bottom>
-              <template v-slot:activator="{on, attrs}">
-                <v-btn
-                    icon
-                    @click="copyTTL"
-                    :color = "copy_clipboard_color"
-                    :loading="copy_clipboard_loading"
-                    :disabled="copy_clipboard_loading"
-                    v-bind="attrs"
-                    v-on="on"
-                >
-                  <v-icon>mdi-content-copy</v-icon>
-                </v-btn>
-              </template>
-              <span>Copy TTL document on clipboard</span>
-            </v-tooltip>
+            <v-btn
+              dark
+              rounded
+              color="green darken-3"
+              @click="ttl_data_dialog = !ttl_data_dialog"
+            >
+              <span v-if="ttl_data_dialog">Graph Visualization</span>
+              <span v-else>Turtle Document</span>
+            </v-btn>
             <v-tooltip bottom>
               <template v-slot:activator="{on, attrs}">
                 <v-btn
@@ -122,7 +119,6 @@
             </v-tooltip>
             <v-dialog
                 v-model="help_dialog"
-                hide-overlay
                 max-width="700px"
             >
               <v-card
@@ -165,7 +161,8 @@
           </v-toolbar>
 
           <v-row class="ma-2 mt-0 mb-10 ml-0">
-            <v-col cols="3">
+            <!-- Documents and Properties sidebar -->
+            <v-col cols="4">
               <v-toolbar
                   dense
                   dark
@@ -173,24 +170,41 @@
                 <v-toolbar-title>Documents and Properties</v-toolbar-title>
               </v-toolbar>
               <v-treeview
+                  class="overflow-auto"
                   v-model="selection"
                   v-bind:style="styleBrowserObject.sideProperties"
                   :items="selectable_properties"
                   selectable
                   activatable
-                  :open-on-click="true"
+                  open-on-click
                   dense
                   return-object
               ></v-treeview>
             </v-col>
-            <v-col cols="9">
+            <!-- Document Visualization (graph and text) -->
+            <v-col cols="8">
               <div ref="browseNetworkGraph"
-                   v-bind:style="styleBrowserObject.dotFullscreenContainer">
+                   v-bind:style="styleBrowserObject.dotFullscreenContainer"
+                   v-show="!ttl_data_dialog"
+              >
+              </div>
+              <div v-show="ttl_data_dialog">
+                <v-textarea
+                    :value="ttl_data"
+                    readonly
+                    outlined
+                    shaped
+                    no-resize
+                    dense
+                    label="Documents in turtle format"
+                    rows="29"
+                ></v-textarea>
               </div>
             </v-col>
           </v-row>
         </v-card>
       </v-dialog>
+      <!-- Extend network dialog -->
       <v-dialog
           v-model="extend_network_dialog"
           width="700"
@@ -219,6 +233,15 @@
                 type="error"
               >
                 {{ this.browse_error_text }}
+              </v-alert>
+              <v-alert
+                v-model="extend_network_succeed"
+                dense
+                text
+                dismissible
+                type="success"
+              >
+                The document has been successfully retrieved and added to the Document and Properties List
               </v-alert>
 
           </v-card-text>
@@ -249,7 +272,6 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
-
     </v-row>
   </v-container>
 </template>
@@ -294,13 +316,13 @@ export default {
     browse_error_text: "",
     browse_error_dialog: false,
     browse_vis_dialog: false,
-    copy_clipboard_loading: false,
-    copy_clipboard_color: "dark",
     central_node: {},
     dot_data: "",
     extend_network_dialog: false,
     extend_network_error: false,
+    extend_network_succeed: false,
     help_dialog: false,
+    first_time_help: true,
     loader: null,
     parsed_data: {},
     network: {},
@@ -311,6 +333,7 @@ export default {
     selection: [],
     sidebar_id: 1,
     ttl_data: "",
+    ttl_data_dialog: false,
     url: "",
     url_from_network: "",
     notes: [
@@ -334,13 +357,6 @@ export default {
 
     ],
     styleBrowserObject: {
-      dotContainer: {
-        flex: 1,
-        width: '100%',
-        height: '418px',
-        border: '1px solid #d3d3d3'
-      },
-
       dotFullscreenContainer: {
         flex: 1,
         width: '100%',
@@ -350,16 +366,16 @@ export default {
 
       sideProperties: {
         flex: 1,
-        overflow: 'scroll',
         height: '792px',
         border: '1px solid #d3d3d3'
-      },
+      }
     }
   }),
 
   methods: {
     searchIri: function () {
       // Sends URL from input to API, and creates a graph network with the response
+      // Works to create the graph, and to extend it
       let requestBody;
       this.search_loading = true;
 
@@ -371,7 +387,7 @@ export default {
         this.parsed_data = {};
         this.searched_documents = [];
         this.selectable_properties = [];
-        this.selection = [];
+        //this.selection = [];
         this.dot_data = "";
         this.ttl_data = "";
         this.sidebar_id = 1;
@@ -382,13 +398,13 @@ export default {
         }
 
         // Validate URL through REGEX
-        if(!this.validURL(this.url)) {
+       /* if(!this.validURL(this.url)) {
           this.browse_error_text = "Not a valid URL. Try this instead \n" +
               "---> http://dbpedia.org/resource/University_of_Chile <---";
           this.browse_error_dialog = true;
           this.search_loading = false;
           return
-        }
+        }*/
 
         requestBody = { url: this.url.toString() };
       }
@@ -418,12 +434,13 @@ export default {
               else this.extend_network_error = true;
 
               this.search_loading = false;
-              this.browse_error_text = response.status;
+              response.json().then(content => {
+                this.browse_error_text = 'Response not 200, instead we got ' + response.status + '. Error: '
+                    + content.browse_error
+              })
 
-              console.log('Response not 200, instead we got ' + response.status);
             }
             else {
-              console.log("Responses inc");
               response.json().then(content => {
                 if (content.model_dot === "" && content.browse_error !== "") {
                   // Check if model is empty and display the error from the API
@@ -435,20 +452,25 @@ export default {
                 }
                 else {
                   this.dot_data = content.model_dot
-                  this.ttl_data += content.model_ttl
                   try {
                     // Build Network for the 1st time
                     if (!this.extend_network_dialog) {
+                      this.ttl_data = content.model_ttl
                       this.buildNetwork()
                       this.search_loading = false;
                       this.network_built = true;
                       this.browse_vis_dialog = true;
+                      if (this.first_time_help) {
+                        this.help_dialog = true;
+                        this.first_time_help = false;
+                      }
                     }
                     // Extend the network
                     else {
+                      this.mergeTTL(this.ttl_data, content.model_ttl)
                       this.extendNetwork()
                       this.search_loading = false;
-                      this.extend_network_dialog = false;
+                      this.extend_network_succeed = true;
                     }
                   }
                   catch (e) {
@@ -474,6 +496,7 @@ export default {
       // Set the graph container
       const refContainer = this.$refs.browseNetworkGraph;
       this.parsed_data = parseDOTNetwork(this.dot_data);
+
       // Find the central node
       this.central_node = this.centralNode(this.parsed_data.nodes);
       let current_nodes = [this.central_node];
@@ -483,16 +506,17 @@ export default {
       current_edges.sort((a,b) => a.label.localeCompare(b.label));
       this.addNodeTitle(this.parsed_data.nodes);
       this.addEdgeDocument(this.parsed_data.edges, this.central_node.id);
-      this.sidebarProperties(current_edges);
+      this.sidebarProperties(current_edges, this.central_node.id);
 
       // Build network and add "doubleClick event"
-      this.network = {'nodes': current_nodes, 'edges': []};
+      this.network = {nodes: current_nodes, edges: []};
       browseNetwork = new Network(refContainer, this.network, options);
       browseNetwork.on("doubleClick", this.doubleClickCallback)
       this.searched_documents.push(this.central_node.id)
     },
 
     doubleClickCallback: function(params) {
+      // Trigger to open Extend Network dialog
       if (params.nodes.length !== 0) {
         let node = this.parsed_data.nodes.find(o => o.id === params.nodes[0])
         if (node.shape === "ellipse") {
@@ -516,17 +540,20 @@ export default {
       this.parsed_data.edges = this.getUniqueItemsByProperties(new_edges, ['to', 'label', 'from'])
       this.parsed_data.nodes = this.getUniqueItemsByProperties(new_nodes, ['id', 'label', 'shape'])
 
-      this.sidebarProperties(new_parsed_data.edges)
+      this.sidebarProperties(new_parsed_data.edges, this.url_from_network)
       this.searched_documents.push(this.url_from_network)
     },
 
     centralNode: function(urlNodes) {
+      // Search for the node which id is equal or most similar to the URI input
       const candidates = urlNodes.filter((node) => node.id.includes(this.url.toString()))
       return candidates.reduce((node1, node2) => node1.id.length <= node2.id.length ? node1 : node2)
     },
 
-    sidebarProperties: function(edges) {
-      let document_container = {"id": this.sidebar_id, "name": edges[0].title, "children": []}
+    sidebarProperties: function(edges, doc_title) {
+      // Creates a structure to handle documents and properties sidebar
+      let truncate_title = doc_title.substring(doc_title.lastIndexOf("://")+3)
+      let document_container = {"id": this.sidebar_id, "name": truncate_title, "children": []}
       this.selectable_properties.push(document_container)
       let document_index = (this.selectable_properties.length - 1)
       this.sidebar_id += 1
@@ -552,9 +579,13 @@ export default {
     },
 
     addNodeTitle: function(nodes) {
+      // Adds title to nodes, in order to handle large literals for mousehover interaction
       nodes.forEach(node => {
         if (!('title' in node)){
           if (node.shape === "ellipse"){
+            if (node.id.length > 60) {
+              node.label = node.label.substring(0, 30) + "..."
+            }
             node.title = node.id
           }
           if (node.shape === "record") {
@@ -578,6 +609,7 @@ export default {
     },
 
     addEdgeDocument: function(edges, title) {
+      // Add document name to Edges for mousehover interaction
       edges.forEach(edge => {
         if (!('title' in edge)) {
           edge.title = "doc: " + title
@@ -586,6 +618,7 @@ export default {
     },
 
     prettyTitle: function(title) {
+      // Prettify large literals
       const container = document.createElement("div")
       container.innerText = title
           .match(/.{1,128}(\s|$)/g)
@@ -594,16 +627,9 @@ export default {
       return container
     },
 
-    /*apacheNodes: function(nodes) {
-      return nodes.filter((node) => node.id.includes('org.apache'))
-    },
-    apacheEdges: function(edges) {
-      return edges.filter((edge) => edge.to.includes('org.apache') || edge.from.includes('org.apache'))
-    },*/
-
     updateNetwork: function(added_edges, removed_edges) {
+      // Handler for graph interaction. Updates the graph with new nodes and edges, or removes them
       if (added_edges.length !== 0) {
-        console.log("adding edges and nodes")
         added_edges.forEach(prop => {
           prop.edges.forEach(edge => {
             this.network.edges.push(edge)
@@ -620,7 +646,6 @@ export default {
         })
       }
       if (removed_edges.length !== 0) {
-        console.log("removing edges and nodes")
         removed_edges.forEach(prop => {
           prop.edges.forEach(edge => {
             this.network.edges = this.network.edges.filter(net_edge => net_edge.id !== edge.id)
@@ -640,21 +665,27 @@ export default {
           })
         })
       }
+
       if (this.network_built){
         browseNetwork.setData(this.network)
         browseNetwork.redraw()
       }
     },
 
-    copyTTL: async function () {
-      try {
-        this.loader = this.copy_clipboard_loading;
-        await navigator.clipboard.writeText(this.ttl_data);
-        this.copy_clipboard_color = "success";
-        setTimeout(() => this.copy_clipboard_color = "dark", 3000);
-      } catch (e) {
-        console.log(e)
-      }
+    mergeTTL: function (ttl1,ttl2) {
+      // Merge the TTL documents whenever the number of documents increase.
+      let prefixes = [];
+      let file_1 = ttl1.split("\n");
+      let file_2 = ttl2.split("\n");
+
+      prefixes = prefixes.concat(file_1.filter( line => line.includes("@prefix")))
+          .concat(file_2.filter( line => line.includes("@prefix")))
+
+      let unique_prefixes = prefixes.filter((value, index, self) => self.indexOf(value) === index)
+
+      let data_1 = file_1.filter(line => !line.includes("@prefix"))
+      let data_2 = file_2.filter(line => !line.includes("@prefix"))
+      this.ttl_data = unique_prefixes.concat(data_1.concat(data_2)).join("\n")
     },
 
     isPropValuesEqual: function(subject, target, propNames) {
@@ -669,7 +700,7 @@ export default {
       );
     },
 
-    validURL: function(str) {
+    /*validURL: function(str) {
       let pattern = new RegExp('^(https?:\\/\\/)?'+ // protocol
       '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+ // domain name
       '((\\d{1,3}\\.){3}\\d{1,3}))'+ // OR ip (v4) address
@@ -677,11 +708,12 @@ export default {
       '(\\?[;&a-z\\d%_.~+=-]*)?'+ // query string
       '(\\#[-a-z\\d_]*)?$','i'); // fragment locator
       return !!pattern.test(str);
-    }
+    }*/
   },
 
   watch: {
     loader() {
+      // Loader icon
       const l = this.loader
       this[l] = !this[l]
       setTimeout(() => (this.search_loading = false), 1000)
@@ -691,6 +723,7 @@ export default {
 
     selection: {
       handler(val, oldVal) {
+        // Documents and properties handler
         let new_edges = val.filter(edges => !oldVal.includes(edges))
         let removed_edges = oldVal.filter (edges => !val.includes(edges))
         this.updateNetwork(new_edges, removed_edges)
