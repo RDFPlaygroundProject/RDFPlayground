@@ -936,8 +936,6 @@
   import VLinedTextarea from "./VLinedTextarea";
   import Browser from "./Browser";
 
-  const backAPI = "localhost";
-
   const MimeTypes = {
       "Text": "text/plain ;charset=utf-8",
       "XML": "application/xml ;charset=utf-8",
@@ -1224,7 +1222,7 @@
         // Check the graph syntax, and if it's correct displays it on graph tab
         let requestBody = { data: this.graph_text.toString()};
         // request syntax check to backend
-        fetch(`http://` + backAPI + `/api/model/syntax_check`, {
+        fetch(`/api/model/syntax_check`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1285,7 +1283,7 @@
           data: text,
           data_lang: format
         };
-        fetch(`http://` + backAPI + `/api/model/dot`, {
+        fetch(`/api/model/dot`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1308,7 +1306,7 @@
         // get the TDB entire model to be displayed
         this.tdb_fetch_loading = true;
         // get model and display it
-        fetch(`http://` + backAPI + `/api/tdb/get_model`, {
+        fetch(`/api/tdb/get_model`, {
           method: 'GET',
         }).then(response => {
           if (!response.ok) {
@@ -1348,7 +1346,7 @@
           query: this.sparql_text.toString(),
           query_response_lang: this.sparql_format_selected
         };
-        fetch(`http://` + backAPI + `/api/tdb/query_model`, {
+        fetch(`/api/tdb/query_model`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1408,7 +1406,7 @@
           query: this.sparql_text.toString(),
           type: selected_operation_type.toString()
         };
-        fetch(`http://` + backAPI + `/api/tdb/query_tdb`, {
+        fetch(`/api/tdb/query_tdb`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1500,7 +1498,7 @@
           profile: profile
         };
 
-        fetch(`http://` + backAPI + `/api/owl/reason`, {
+        fetch(`/api/owl/reason`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1550,7 +1548,7 @@
           shape_lang: "TTL"
         };
 
-        fetch(`http://` + backAPI + `/api/shape/shacl_isvalid`, {
+        fetch(`/api/shape/shacl_isvalid`, {
           method: 'POST',
           headers: new Headers({
           'Content-Type': MimeTypes.JSON,
@@ -1606,7 +1604,7 @@
           shape_map: this.shex_text_shape_map
         };
 
-        fetch(`http://` + backAPI + `/api/shape/shex_isvalid`, {
+        fetch(`/api/shape/shex_isvalid`, {
           method: 'POST',
           headers: new Headers({
               'Content-Type': 'application/json',
