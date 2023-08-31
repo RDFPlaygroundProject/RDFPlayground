@@ -18,6 +18,7 @@ RUN apk update && apk add --no-cache \
 COPY odin /app/odin
 WORKDIR /app/odin
 RUN npm install
+RUN npm run build
 
 RUN apk update && apk add --no-cache \
     nginx
