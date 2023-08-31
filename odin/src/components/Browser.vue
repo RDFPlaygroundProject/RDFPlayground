@@ -283,7 +283,7 @@ import {Network} from 'vis-network';
 import {parseDOTNetwork} from 'vis-network';
 // import vis from 'vis';
 
-const backAPI = "localhost:9060";
+const backAPI = "localhost";
 let options = {
   nodes: {
     font: {

@@ -12,7 +12,7 @@ open class WebConfig: WebMvcConfigurer {
     override fun addCorsMappings(registry: CorsRegistry) {
         // Based on https://docs.spring.io/spring/docs/current/spring-framework-reference/web.html#mvc-cors-global
         registry.addMapping("/api/**")
-            .allowedOrigins("http://localhost:8090")
+            .allowedOrigins("*")
             .allowedMethods("GET", "POST")
             .maxAge(3600)
     }

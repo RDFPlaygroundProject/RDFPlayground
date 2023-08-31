@@ -936,7 +936,7 @@
   import VLinedTextarea from "./VLinedTextarea";
   import Browser from "./Browser";
 
-  const backAPI = "localhost:9060";
+  const backAPI = "localhost";
 
   const MimeTypes = {
       "Text": "text/plain ;charset=utf-8",
