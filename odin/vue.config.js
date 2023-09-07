@@ -3,5 +3,8 @@ module.exports = {
     "vuetify",
     "vis",
     "vis-network"
-  ]
+  ],
+  'devServer': {
+    'disableHostCheck': true
+  }
 };

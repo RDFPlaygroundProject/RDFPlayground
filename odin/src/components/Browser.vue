@@ -283,7 +283,6 @@ import {Network} from 'vis-network';
 import {parseDOTNetwork} from 'vis-network';
 // import vis from 'vis';
 
-const backAPI = "localhost:9060";
 let options = {
   nodes: {
     font: {
@@ -420,7 +419,7 @@ export default {
       }
 
       // Send URL to API
-      fetch('http://' + backAPI + '/api/model/browse', {
+      fetch('/api/model/browse', {
         method: 'POST',
         headers: new Headers({
           'Content-Type': 'application/json',
