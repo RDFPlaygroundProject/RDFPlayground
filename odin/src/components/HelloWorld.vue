@@ -1222,7 +1222,7 @@
         // Check the graph syntax, and if it's correct displays it on graph tab
         let requestBody = { data: this.graph_text.toString()};
         // request syntax check to backend
-        fetch(`/api/model/syntax_check`, {
+        fetch(`http://localhost:9060/api/model/syntax_check`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1283,7 +1283,7 @@
           data: text,
           data_lang: format
         };
-        fetch(`/api/model/dot`, {
+        fetch(`http://localhost:9060/api/model/dot`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1306,7 +1306,7 @@
         // get the TDB entire model to be displayed
         this.tdb_fetch_loading = true;
         // get model and display it
-        fetch(`/api/tdb/get_model`, {
+        fetch(`http://localhost:9060/api/tdb/get_model`, {
           method: 'GET',
         }).then(response => {
           if (!response.ok) {
@@ -1346,7 +1346,7 @@
           query: this.sparql_text.toString(),
           query_response_lang: this.sparql_format_selected
         };
-        fetch(`/api/tdb/query_model`, {
+        fetch(`http://localhost:9060/api/tdb/query_model`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1406,7 +1406,7 @@
           query: this.sparql_text.toString(),
           type: selected_operation_type.toString()
         };
-        fetch(`/api/tdb/query_tdb`, {
+        fetch(`http://localhost:9060/api/tdb/query_tdb`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1498,7 +1498,7 @@
           profile: profile
         };
 
-        fetch(`/api/owl/reason`, {
+        fetch(`http://localhost:9060/api/owl/reason`, {
           method: 'POST',
           headers: new Headers({
             'Content-Type': 'application/json',
@@ -1548,7 +1548,7 @@
           shape_lang: "TTL"
         };
 
-        fetch(`/api/shape/shacl_isvalid`, {
+        fetch(`http://localhost:9060/api/shape/shacl_isvalid`, {
           method: 'POST',
           headers: new Headers({
           'Content-Type': MimeTypes.JSON,
@@ -1604,7 +1604,7 @@
           shape_map: this.shex_text_shape_map
         };
 
-        fetch(`/api/shape/shex_isvalid`, {
+        fetch(`http://localhost:9060/api/shape/shex_isvalid`, {
           method: 'POST',
           headers: new Headers({
               'Content-Type': 'application/json',
