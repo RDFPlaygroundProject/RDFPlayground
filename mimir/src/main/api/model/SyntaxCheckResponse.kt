@@ -63,19 +63,24 @@ class SyntaxCheckController {
         } catch (e: Exception) {
             return ResponseEntity(SyntaxCheckResponse(syntax_error = e.message.toString()), HttpStatus.INTERNAL_SERVER_ERROR)
         }
-        return ResponseEntity(SyntaxCheckResponse(data_dot =  dotRepresentation), HttpStatus.OK)
+        return ResponseEntity(SyntaxCheckResponse(data_dot = dotRepresentation ), HttpStatus.OK)
     }
 
 
     fun sparqlPatternToDot(): String {
         // Example SPARQL query string
         val queryString = """
-        SELECT DISTINCT ?baryon ?force 
+        SELECT DISTINCT ?particle 
         WHERE {
-            ?baryon a ?Baryon ; ?Contains ?_ .
-            ?_ ?Component ?component .
-            ?component ?interaction ?force .
-            } 
+            {?particle ?Interaction ?force . }
+            UNION {
+                ?particle ?Contains ?_ .
+                ?_ ?Component ?component .
+                ?component ?Interaction ?force .
+            }
+            ?boson ?Mediates ?force .
+            FILTER (?boson = ?Gluon || ?boson = ?Photon)  
+        } 
         """
         // Parse the query string into a Query object
         val query = QueryFactory.create(queryString)
@@ -84,7 +89,7 @@ class SyntaxCheckController {
         val queryPattern: Element = query.queryPattern
     
         // Map to store unique identifiers for subjects and objects
-        val nodeIds = HashMap<String, Map<String, String> >()
+        val nodeIds = HashMap<String, MutableMap<String, String> >()
     
         // Create DOT representation of the query pattern
         val dotRepresentation = StringBuilder("graph QueryPattern {\n")
@@ -94,7 +99,7 @@ class SyntaxCheckController {
             val selectVars = query.projectVars
             for (variable in selectVars) {
                 val varName = variable.name
-                nodeIds.getOrPut("?$varName", { mapOf("shape" to "ellipse", "color" to "yellow") })
+                nodeIds.getOrPut("?$varName", { mutableMapOf("shape" to "ellipse", "color" to "yellow") })
             }
 
             // Process the elements in the group
@@ -107,18 +112,17 @@ class SyntaxCheckController {
                         val subject = triple.subject
                         val obj = triple.`object`
     
-                        // Assign unique IDs to subject and object nodes
-                        var color = "lightblue"
+                        // Assign node values to subjects and objects
                         var subject_name = subject.toString()
-                        if (subject_name[1] == '_'){
-                            color = "pink"
-                        }
+                        var color = if (subject_name[1] == '_') "purple" else "lightblue"
                         var obj_name = obj.toString()
-                        nodeIds.getOrPut(subject_name, { mapOf("shape" to "ellipse", "color" to color) })
-                        nodeIds.getOrPut(obj_name, { HashMap<String, String>() })
+                        nodeIds.getOrPut(subject_name, { mutableMapOf("shape" to "ellipse", "color" to color) })
+                        color = if (obj_name[1] == '_') "purple" else "lightblue"
+                        nodeIds.getOrPut(obj_name, { mutableMapOf("shape" to "ellipse", "color" to color) })
     
                         // Add DOT representation for edge representing the predicate
-                        dotRepresentation.append("  \"$subject_name\" -> \"$obj_name\" [label=\"${triple.predicate}\"];\n")
+                        val label = if (triple.predicate.toString() != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") triple.predicate else "rdf:type"
+                        dotRepresentation.append("  \"$subject_name\" -> \"$obj_name\" [label=\"${label}\"];\n")
                     }
                 }
             }
