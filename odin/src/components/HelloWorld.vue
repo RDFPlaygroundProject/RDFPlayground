@@ -996,7 +996,7 @@
           "PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>\n" +
           "\n" +
           "SELECT * WHERE {?s ?p ?o} LIMIT 10",
-      sparql_operation_type: ['ASK', 'CONSTRUCT', 'DESCRIBE', 'SELECT'],
+      sparql_operation_type: ['ASK', 'CONSTRUCT', 'DESCRIBE', 'SELECT', 'VIEW'],
       sparql_tdb_operation_type: ['ASK', 'CONSTRUCT', 'DESCRIBE', 'SELECT', 'INPUT', 'DELETE', 'LOAD', 'CLEAR'],
       sparql_operation_selected: "",
       sparql_format_selected: "",
@@ -1467,6 +1467,8 @@
           this.sparql_results_format = ['Text'];
         } else if (type === 'LOAD' || type === 'CLEAR') {
           this.sparql_results_format = ['Text'];
+        } else if (type === 'VIEW') {
+          this.sparql_results_format = ['Query'];
         }
       },
       sparqlFieldReset: function () {
