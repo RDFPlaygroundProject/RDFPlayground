@@ -1347,9 +1347,6 @@
           query: this.sparql_text.toString(),
           query_response_lang: this.sparql_format_selected
         };
-        // console.log("Request enviada: ");
-        // console.log(MimeTypes.Text+', '+MimeTypes[this.sparql_format_selected]);
-        // console.log(requestBody);
 
         fetch(`http://localhost:9060/api/tdb/query_model`, {
           method: 'POST',
@@ -1367,33 +1364,12 @@
             this.sparql_run_loading = false;
           }
           else {
-            console.log("Llega esto: ");
-            console.log(response);
-            console.log(this.sparql_format_selected)
-            console.log("-----")
 
             if (this.sparql_format_selected === 'Query') {  //Nuestro caso
-              console.log("Nuestro caso");
-              console.log(response.body);
 
               response.text().then(content => {
-
-                console.log("content", content);
                 this.result_text = "Cambie a venta de graficos";  //content.text;
-                // const graph = `graph QueryPattern {
-                //               "?particle_1" -> "?force_1" [label="?Interaction"];
-                //               "?particle_1" [shape=ellipse, fillcolor="lightblue", style="filled"];
-                //               "?particle_2" -> "?__2" [label="?Contains"];
-                //               "?particle_2" [shape=ellipse, fillcolor="lightblue", style="filled"];
-                //               "?force_1" [shape=ellipse, fillcolor="lightblue", style="filled"];
-                //               "?force_2" [shape=ellipse, fillcolor="lightblue", style="filled"];
-                //               "?boson" -> "?force_1" [label="?Mediates"];
-                //               "?boson" -> "?force_2" [label="?Mediates"];
-                //               "?boson" [shape=ellipse, fillcolor="lightblue", style="filled"];
-                //               "bf5c389" -> "?particle_1" [label="union"];
-                //               "bf5c389" -> "?particle_2" [label="union"];
-                //               "bf5c389" [shape=diamond, fillcolor="orange", style="filled"];
-                //             }`
+
                 this.result_dot = parseDOTNetwork(content);
                 this.sparql_run_loading = false;
               })
