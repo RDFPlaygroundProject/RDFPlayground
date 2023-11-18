@@ -30,7 +30,7 @@ data class SyntaxCheckResponse(val syntax_error: String = "", val data_dot: Stri
 
 @RestController
 class SyntaxCheckController {
-
+    var union_count = 0;
     @PostMapping(
         "/api/model/syntax_check",
         consumes = [MediaType.APPLICATION_JSON_UTF8_VALUE],
@@ -70,14 +70,16 @@ class SyntaxCheckController {
     }
 
 
-    fun processQueryPattern(element: Element, nodeIds: HashMap<String, MutableMap<String, String>>, dotRepresentation: StringBuilder) {
+    fun processQueryPattern(element: Element, nodeIds: HashMap<String, MutableList<MutableMap<String, String> > >, dotRepresentation: StringBuilder, union: Int=0 ) {
         when (element) {
             is ElementGroup -> {
+                println("group")
                 for (subElement in element.elements) {
-                    processQueryPattern(subElement, nodeIds, dotRepresentation)
+                    processQueryPattern(subElement, nodeIds, dotRepresentation, union)
                 }
             }
             is ElementPathBlock -> {
+                println("pathblock")
                 // Process triple patterns
                 for (triplePath in element.pattern) {
                     val triple = triplePath.asTriple()
@@ -89,29 +91,66 @@ class SyntaxCheckController {
                     var scolor = if (subject_name[1] == '_') "purple" else "lightblue"
                     var obj_name = obj.toString()
                     var ocolor = if (obj_name[1] == '_') "purple" else "lightblue"
-                    nodeIds.getOrPut(subject_name, {mutableMapOf("shape" to "ellipse", "color" to scolor)})
-                    nodeIds.getOrPut(obj_name, {mutableMapOf("shape" to "ellipse", "color" to ocolor)})
-        
-                    // Add DOT representation for edge representing the predicate
                     val label = if (triple.predicate.toString() != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") triple.predicate else "rdf:type"
-                    dotRepresentation.append("  \"$subject_name\" -> \"$obj_name\" [label=\"${label}\"];\n")
+                    println("subject: $subject_name, object: $obj_name")
+                    if(union > 0){
+                        println("union: $union")
+                        var new_subject = subject_name  + "_${union}"
+                        var new_object = obj_name + "_${union}"
+                        // Subject node
+                        if (nodeIds.containsKey(subject_name)) {  // additional instance
+                            var subject_entry = nodeIds.get(subject_name)
+                            subject_entry?.add(
+                                mutableMapOf("name" to new_subject, "shape" to "ellipse", 
+                                             "color" to scolor, "draw" to "true"
+                            ))
+                        } else { // first instance
+                            var new_entry = nodeIds.getOrPut(subject_name, {
+                                mutableListOf(mutableMapOf("name" to subject_name,
+                                                           "shape" to "ellipse", "color" to scolor, "draw" to "false"))})
+                            new_entry.add(
+                                mutableMapOf("name" to new_subject, "shape" to "ellipse", 
+                                             "color" to scolor, "draw" to "true"))
+                        }
+                        // Object node
+                        if (nodeIds.containsKey(obj_name)) { // additional instance
+                            var object_entry = nodeIds.get(obj_name)
+                            object_entry?.add(
+                                mutableMapOf("name" to new_object, "shape" to "ellipse", 
+                                             "color" to ocolor, "draw" to "true"))
+                        } else { // first instance
+                            var new_entry = nodeIds.getOrPut(obj_name, {
+                                mutableListOf(mutableMapOf("name" to obj_name, 
+                                                           "shape" to "ellipse", "color" to ocolor, "draw" to "false"))})
+                            new_entry.add(
+                                mutableMapOf("name" to new_object, "shape" to "ellipse", 
+                                             "color" to ocolor, "draw" to "true"))
+                        }
+                        // Add DOT representation for edge representing the predicate
+                        println("  \"$new_subject\" -> \"$new_object\" [label=\"${label}\"];\n")
+                        dotRepresentation.append("  \"$new_subject\" -> \"$new_object\" [label=\"${label}\"];\n")
+                    } else {
+                        println("triple")
+                        nodeIds.getOrPut(subject_name, {mutableListOf(mutableMapOf("name" to subject_name,"shape" to "ellipse", "color" to scolor, "draw" to "true"))})
+                        nodeIds.getOrPut(obj_name, {mutableListOf(mutableMapOf("name" to obj_name, "shape" to "ellipse", "color" to ocolor, "draw" to "true"))})
+                        // Add DOT representation for edge representing the predicate
+                        dotRepresentation.append("  \"$subject_name\" -> \"$obj_name\" [label=\"${label}\"];\n")
+                        println("  \"$subject_name\" -> \"$obj_name\" [label=\"${label}\"];\n")
+                    }
                 }
             }
             is ElementUnion -> {
+                print("union")
                 // Handle UNION patterns
                 val union_name = Hashing.sha1().hashString(element.toString(), Charsets.UTF_8).toString().substring(0,7)    // Generate a unique identifier for the union
-                nodeIds.getOrPut(union_name, {mutableMapOf("shape" to "diamond", "color" to "orange")})
-                val i = 0;
+                nodeIds.getOrPut(union_name, {mutableListOf(mutableMapOf("name" to union_name, "shape" to "diamond", "color" to "orange", "draw" to "true"))})
+                val connected_node = nodeIds.keys.first()
                 for (subElement in element.elements) {
-                    processQueryPattern(subElement, nodeIds, dotRepresentation)
-                    // copy nodeIds to new map with each name suffixed with "_union_name"
-                    val new_nodeIds = HashMap<String, MutableMap<String, String> >()
-                    for ((name, node) in nodeIds) {
-                        new_nodeIds.getOrPut("${name}_${union_name}${i}", {mutableMapOf("shape" to node["shape"]!!, "color" to node["color"]!!)})
-                    }
-                    // Add DOT representation for edge representing the union
-                    dotRepresentation.append("  \"$union_name\" -> \"${union_name}${i}\" [label=\"union\"];\n")
-                    
+                    union_count += 1
+                    // copy nodeIds to new map with each name suffixed with "_union_count"
+                    processQueryPattern(subElement, nodeIds, dotRepresentation, union_count)
+                    // Add DOT representation for edge representing the union to a node of the new_nodeIds
+                    dotRepresentation.append("  \"$union_name\" -- \"${connected_node}_${union_count}\" [label=\"union\", color=\"gray\" ];\n")
                 }
             }
             is ElementFilter -> {
@@ -164,6 +203,7 @@ class SyntaxCheckController {
             FILTER (?boson = ?Gluon || ?boson = ?Photon)  
         } 
         """
+        union_count = 0
         // Parse the query string into a Query object
         val query = QueryFactory.create(queryString)
 
@@ -171,7 +211,7 @@ class SyntaxCheckController {
         val queryPattern: Element = query.queryPattern
 
         // Map to store unique identifiers for subjects and objects
-        val nodeIds = HashMap<String, MutableMap<String, String> >()
+        val nodeIds = HashMap<String, MutableList<MutableMap<String, String> > >()
 
         // Create DOT representation of the query pattern
         val dotRepresentation = StringBuilder("graph QueryPattern {\n")
@@ -181,15 +221,20 @@ class SyntaxCheckController {
             var selectVars = query.projectVars
             for (varName in selectVars) {
                 var varNameStr = varName.toString()
-                nodeIds.getOrPut(varNameStr, {mutableMapOf("shape" to "ellipse", "color" to "yellow")})
+                nodeIds.getOrPut(varNameStr, {mutableListOf(mutableMapOf("name" to varNameStr, "shape" to "ellipse", "color" to "yellow"))}  )
             }
-            processQueryPattern(queryPattern, nodeIds, dotRepresentation)
+            processQueryPattern(queryPattern, nodeIds, dotRepresentation, union_count)
     
             // Add DOT representation for node styles
-            for ((subject_name, subject) in nodeIds) {
-                var shape = subject["shape"]
-                var color = subject["color"]
-                dotRepresentation.append("  \"$subject_name\" [shape=$shape, fillcolor=\"$color\", style=\"filled\"];\n")
+            for ((_, subjectInstances) in nodeIds) {
+                for (subject in subjectInstances) {
+                    if (subject["draw"] == "true"){
+                        var name = subject["name"]
+                        var shape = subject["shape"]
+                        var color = subjectInstances[0]["color"]
+                        dotRepresentation.append("  \"$name\" [shape=$shape, fillcolor=\"$color\", style=\"filled\"];\n")
+                    }
+                }
             }
     
         }
@@ -197,6 +242,12 @@ class SyntaxCheckController {
         dotRepresentation.append("}")
         println("DOT Representation:")
         println(dotRepresentation.toString())
+        for( (key, valu) in nodeIds) {
+            println("key: $key")
+            for (v in valu) {
+                println("  $v")
+            }
+        }
         return dotRepresentation.toString()
     }
            
