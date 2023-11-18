@@ -12,16 +12,7 @@ import loadModel
 
 
 
-fun sparqlPatternToDot(): String {
-    // Example SPARQL query string
-    val queryString = """
-    SELECT DISTINCT ?baryon ?force 
-    WHERE {
-        ?baryon a ?Baryon ; ?Contains ?_ .
-        ?_ ?Component ?component .
-        ?component ?interaction ?force .
-        } 
-    """
+fun sparqlPatternToDot(queryString: String): String {
     // Parse the query string into a Query object
     val query = QueryFactory.create(queryString)
 

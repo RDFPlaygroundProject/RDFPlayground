@@ -89,7 +89,7 @@ class QueryModelController {
         var queryResponseBody = String()
         var response_type:String = request.query_response_lang
         if (response_type == "Query") {
-            queryResponseBody = sparqlPatternToDot()
+            queryResponseBody = sparqlPatternToDot(request.query)
         }
         else {
             try {
