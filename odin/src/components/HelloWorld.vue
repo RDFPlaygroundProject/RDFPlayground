@@ -1347,9 +1347,9 @@
           query: this.sparql_text.toString(),
           query_response_lang: this.sparql_format_selected
         };
-        console.log("Request enviada: ");
-        console.log(MimeTypes.Text+', '+MimeTypes[this.sparql_format_selected]);
-        console.log(requestBody);
+        // console.log("Request enviada: ");
+        // console.log(MimeTypes.Text+', '+MimeTypes[this.sparql_format_selected]);
+        // console.log(requestBody);
 
         fetch(`http://localhost:9060/api/tdb/query_model`, {
           method: 'POST',
@@ -1367,26 +1367,59 @@
             this.sparql_run_loading = false;
           }
           else {
-            response.text().then(bodyText => {
-              this.result_text = bodyText;
-              this.result_icon = "mdi-database-search";
-              this.result_origin = "SPARQL";
-              this.sparql_run_loading = false;
+            console.log("Llega esto: ");
+            console.log(response);
+            console.log(this.sparql_format_selected)
+            console.log("-----")
 
-              // Try to display the DOT version if applicable
-              if (this.sparql_operation_selected === 'CONSTRUCT'
-                || this.sparql_operation_selected === 'DESCRIBE'
-              ) {
-                if (this.sparql_format_selected === 'DOT') {
-                  // Result Text is DOT and we can use that
-                  this.result_dot = parseDOTNetwork(this.result_text);
-                  this.sparql_run_loading = false;
-                } else {
-                  // Fetch DOT version from backend
-                  this.dotFetchResult(this.result_text, this.sparql_format_selected);
+            if (this.sparql_format_selected === 'Query') {  //Nuestro caso
+              console.log("Nuestro caso");
+              console.log(response.body);
+
+              response.text().then(content => {
+
+                console.log("content", content);
+                this.result_text = "Cambie a venta de graficos";  //content.text;
+                // const graph = `graph QueryPattern {
+                //               "?particle_1" -> "?force_1" [label="?Interaction"];
+                //               "?particle_1" [shape=ellipse, fillcolor="lightblue", style="filled"];
+                //               "?particle_2" -> "?__2" [label="?Contains"];
+                //               "?particle_2" [shape=ellipse, fillcolor="lightblue", style="filled"];
+                //               "?force_1" [shape=ellipse, fillcolor="lightblue", style="filled"];
+                //               "?force_2" [shape=ellipse, fillcolor="lightblue", style="filled"];
+                //               "?boson" -> "?force_1" [label="?Mediates"];
+                //               "?boson" -> "?force_2" [label="?Mediates"];
+                //               "?boson" [shape=ellipse, fillcolor="lightblue", style="filled"];
+                //               "bf5c389" -> "?particle_1" [label="union"];
+                //               "bf5c389" -> "?particle_2" [label="union"];
+                //               "bf5c389" [shape=diamond, fillcolor="orange", style="filled"];
+                //             }`
+                this.result_dot = parseDOTNetwork(content);
+                this.sparql_run_loading = false;
+              })
+              
+            } else {  //resto de casos
+              response.text().then(bodyText => {
+                this.result_text = bodyText;
+                this.result_icon = "mdi-database-search";
+                this.result_origin = "SPARQL";
+                this.sparql_run_loading = false;
+  
+                // Try to display the DOT version if applicable
+                if (this.sparql_operation_selected === 'CONSTRUCT'
+                  || this.sparql_operation_selected === 'DESCRIBE'
+                ) {
+                  if (this.sparql_format_selected === 'DOT') {
+                    // Result Text is DOT and we can use that
+                    this.result_dot = parseDOTNetwork(this.result_text);
+                    this.sparql_run_loading = false;
+                  } else {
+                    // Fetch DOT version from backend
+                    this.dotFetchResult(this.result_text, this.sparql_format_selected);
+                  }
                 }
-              }
-            });
+              });
+            }
           }
         }).catch(reason => {
           this.sparqlShowAlert(reason);

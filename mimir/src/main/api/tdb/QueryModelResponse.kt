@@ -18,6 +18,7 @@ import loadModel
 import parseFormat
 import toDOT
 import toMimeType
+import api.tdb.sparqlPatternToDot
 
 
 data class QueryModelRequest(
@@ -89,6 +90,8 @@ class QueryModelController {
         var response_type:String = request.query_response_lang
         if (response_type == "Query") {
             println("Nuestro caso")
+            queryResponseBody = sparqlPatternToDot()
+            println(queryResponseBody)
         }
         else {
             println("Otros casos")
@@ -122,7 +125,7 @@ class QueryModelController {
                 return ResponseEntity("Unsupported Media type / Format", header, HttpStatus.UNSUPPORTED_MEDIA_TYPE)
             }
         }
-
+        println(queryResponseBody)
         header.add(HttpHeaders.CONTENT_TYPE, toMimeType(responseLang))
         return ResponseEntity(queryResponseBody, header, HttpStatus.OK)
     }
