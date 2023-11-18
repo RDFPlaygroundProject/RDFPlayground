@@ -77,10 +77,6 @@ fun sparqlPatternToDot(): String {
 
     dotRepresentation.append("}")
 
-    // Print DOT representation
-    println("DOT Representation:")
-    println(dotRepresentation.toString())
-
     return dotRepresentation.toString()
 }
             
