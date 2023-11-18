@@ -945,7 +945,8 @@
       "TSV": "text/tab-separated-values ;charset=utf-8",
       "TTL": "text/turtle ;charset=utf-8",
       "NTRIPLES": "application/n-triples ;charset=utf-8",
-      "DOT": "text/vnd.graphviz ;charset=utf-8"
+      "DOT": "text/vnd.graphviz ;charset=utf-8",
+      "Query": "text/plain ;charset=utf-8"
   };
 
   // definitions for DOT graph, according to https://forum.vuejs.org/t/vue-cli-webpack-how-to-install-vis/5729
@@ -1346,6 +1347,10 @@
           query: this.sparql_text.toString(),
           query_response_lang: this.sparql_format_selected
         };
+        console.log("Request enviada: ");
+        console.log(MimeTypes.Text+', '+MimeTypes[this.sparql_format_selected]);
+        console.log(requestBody);
+
         fetch(`http://localhost:9060/api/tdb/query_model`, {
           method: 'POST',
           headers: new Headers({
