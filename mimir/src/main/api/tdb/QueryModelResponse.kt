@@ -18,12 +18,14 @@ import loadModel
 import parseFormat
 import toDOT
 import toMimeType
+import api.tdb.sparqlPatternToDot
 
 
 data class QueryModelRequest(
     val data: String = "",
     val data_lang: String = "TTL",
-    val query: String = ""
+    val query: String = "",
+    val query_response_lang:String = ""
 )
 
 fun pickFormat(formats: MutableList<String>): String {
@@ -85,36 +87,41 @@ class QueryModelController {
         }
 
         var queryResponseBody = String()
-        try {
-            QueryExecutionFactory.create(query, model).let { qExecution: QueryExecution ->
-                when {
-                    query.isSelectType -> {
-                        val resultSet: ResultSet = qExecution.execSelect()
-                        queryResponseBody = resultSet.formatAs(responseLang)
-                    }
-                    query.isAskType -> {
-                        val resultSet: Boolean = qExecution.execAsk()
-                        queryResponseBody = resultSet.formatAskAs(responseLang)
-                    }
-                    query.isConstructType or query.isDescribeType -> {
-                        val resultModel: Model = when {
-                            query.isConstructType -> qExecution.execConstruct()
-                            query.isDescribeType -> qExecution.execDescribe()
-                            else -> createDefaultModel() // Should not be possible, but when is exhaustive
+        var response_type:String = request.query_response_lang
+        if (response_type == "Query") {
+            queryResponseBody = sparqlPatternToDot(request.query)
+        }
+        else {
+            try {
+                QueryExecutionFactory.create(query, model).let { qExecution: QueryExecution ->
+                    when {
+                        query.isSelectType -> {
+                            val resultSet: ResultSet = qExecution.execSelect()
+                            queryResponseBody = resultSet.formatAs(responseLang)
                         }
-                        // Format to response, defaults to TTL
-                        val responsePair: Pair<String, String> = resultModel.formatAs(responseLang)
-                        queryResponseBody = responsePair.first
-                        responseLang = responsePair.second
+                        query.isAskType -> {
+                            val resultSet: Boolean = qExecution.execAsk()
+                            queryResponseBody = resultSet.formatAskAs(responseLang)
+                        }
+                        query.isConstructType or query.isDescribeType -> {
+                            val resultModel: Model = when {
+                                query.isConstructType -> qExecution.execConstruct()
+                                query.isDescribeType -> qExecution.execDescribe()
+                                else -> createDefaultModel() // Should not be possible, but when is exhaustive
+                            }
+                            // Format to response, defaults to TTL
+                            val responsePair: Pair<String, String> = resultModel.formatAs(responseLang)
+                            queryResponseBody = responsePair.first
+                            responseLang = responsePair.second
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                // Return an error response
+                header.add(HttpHeaders.CONTENT_TYPE, MimeType.text)
+                return ResponseEntity("Unsupported Media type / Format", header, HttpStatus.UNSUPPORTED_MEDIA_TYPE)
             }
-        } catch (e: Exception) {
-            // Return an error response
-            header.add(HttpHeaders.CONTENT_TYPE, MimeType.text)
-            return ResponseEntity("Unsupported Media type / Format", header, HttpStatus.UNSUPPORTED_MEDIA_TYPE)
         }
-
         header.add(HttpHeaders.CONTENT_TYPE, toMimeType(responseLang))
         return ResponseEntity(queryResponseBody, header, HttpStatus.OK)
     }
