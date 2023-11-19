@@ -19,6 +19,7 @@ import org.apache.jena.sparql.syntax.ElementGroup;
 import org.apache.jena.sparql.syntax.ElementPathBlock;
 import org.apache.jena.sparql.syntax.ElementUnion;
 import org.apache.jena.sparql.syntax.ElementFilter;
+import org.apache.commons.lang3.mutable.Mutable
 import com.google.common.hash.Hashing;
 
 
@@ -72,7 +73,7 @@ class SyntaxCheckController {
     }
 
 
-    fun processQueryPattern(element: Element, nodeIds: MutableList<HashMap<String,MutableMap<String, String> > >, dotRepresentation: MutableList<MutableList<Triple<String, String, String>>>, follow_up: MutableList<Element>? = mutableListOf() ) {
+    fun processQueryPattern(element: Element, nodeIds: MutableList<MutableMap<String,MutableMap<String, String> > >, dotRepresentation: MutableList<MutableList<Triple<String, String, String>>>, follow_up: MutableList<Element>? = mutableListOf() ) {
         when (element) {
             is ElementGroup -> {
                 println("group")
@@ -96,9 +97,19 @@ class SyntaxCheckController {
         
                     // Assign node values to subjects and objects
                     var subject_name = subject.toString() 
-                    var scolor = if (subject_name[1] == '_') "purple" else "lightblue"
+                    var scolor = "lightblue"
+                    if (subject_name[1] == '_') {
+                        scolor = "purple"
+                    } else if (subject_name[0] == '?'){
+                        scolor = "gray"
+                    } 
                     var obj_name = obj.toString() 
-                    var ocolor = if (obj_name[1] == '_') "purple" else "lightblue"
+                    var ocolor =  "lightblue"
+                    if (subject_name[1] == '_') {
+                        ocolor = "purple"
+                    } else if (subject_name[0] == '?'){
+                        ocolor = "gray"
+                    } 
                     val label = if (triple.predicate.toString() != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") triple.predicate else "rdf:type"
 
                     nodeIds[union_count].getOrPut(subject_name, {mutableMapOf("name" to subject_name, "shape" to "ellipse", "color" to scolor, "draw" to "true")}  )
@@ -115,16 +126,17 @@ class SyntaxCheckController {
                 println("union")
                 // make union node and link up to first node of graph
                 val union_name = "UNION_"+ union_count.toString() //Hashing.sha1().hashString(element.toString(), Charsets.UTF_8).toString().substring(0,7)    // Generate a unique identifier for the union
-                nodeIds[union_count].getOrPut(union_name, {mutableMapOf("name" to union_name, "shape" to "diamond", "color" to "orange", "draw" to "true")}  )
                 val connected_node = nodeIds[union_count].keys.first()
+                nodeIds[union_count].getOrPut(union_name, {mutableMapOf("name" to union_name, "shape" to "diamond", "color" to "orange", "draw" to "true")}  )
                 
 
                 // copy current graph into a new graph
                 val copy_graph = mutableListOf<Triple<String, String, String>>()
                 copy_graph.addAll(dotRepresentation[union_count])
-
-                // copy nodeIds to new map with each name suffixed with "_union_count"
-                val copy_nodes = HashMap<String, MutableMap<String, String>>()
+                
+                
+                // copy all NodeIds from current graph into new graph
+                val rightSideNodeIds = nodeIds[union_count].toMutableMap()
 
                 val first_element = element.elements[0]
                 val union_triple = Triple(union_name, "union", connected_node)
@@ -142,7 +154,7 @@ class SyntaxCheckController {
 
                 union_count += 1
                 dotRepresentation.add(copy_graph)
-                nodeIds.add(copy_nodes)
+                nodeIds.add(rightSideNodeIds)
 
                 val second_element = element.elements[1]
                 processQueryPattern(second_element, nodeIds, dotRepresentation)
@@ -161,7 +173,7 @@ class SyntaxCheckController {
         }
     }
 
-    fun processFilter(element: Element, nodeIds: HashMap<String, MutableMap<String, String>>, dotRepresentation: MutableList<MutableList<Triple<String, String, String>>>, isFilterNotExists: Boolean) {
+    fun processFilter(element: Element, nodeIds: MutableMap<String, MutableMap<String, String>>, dotRepresentation: MutableList<MutableList<Triple<String, String, String>>>, isFilterNotExists: Boolean) {
         // Process FILTER or FILTER NOT EXISTS patterns
         if (element is ElementFilter) {
             // Assuming you have logic to identify affected nodes and edges
@@ -207,8 +219,9 @@ class SyntaxCheckController {
         val queryPattern: Element = query.queryPattern
 
         // Map to store unique identifiers for subjects and objects
-        val nodeIds = mutableListOf<HashMap<String, MutableMap<String, String> >>()
-        nodeIds.add(HashMap<String, MutableMap<String, String>>())
+        val nodeIds = mutableListOf<MutableMap<String, MutableMap<String, String> >>()
+        
+        nodeIds.add(mutableMapOf())
 
         // Create DOT representation of the query pattern
         val dotRepresentation = StringBuilder("graph QueryPattern {\n")
@@ -225,9 +238,14 @@ class SyntaxCheckController {
     
             // concatenate all subgraphs
             var i = 0
+            println("===========================")
             for (subGraphElem in subGraphs) {
                 val subGraph = StringBuilder()
                 for (triple in subGraphElem) {
+                    if (triple.first.contains("UNION") || triple.third.contains("UNION")) {
+                        subGraph.append("  \"${triple.first}\" -- \"${triple.third}_${i}\" [label=\"${triple.second}\", color=\"gray\"];\n")
+                        continue
+                    }
                     subGraph.append("  \"${triple.first}_${i}\" -> \"${triple.third}_${i}\" [label=\"${triple.second}\"];\n")
                 }
                 dotRepresentation.append(subGraph.toString())
@@ -237,6 +255,7 @@ class SyntaxCheckController {
                     var name = properties.getOrDefault("name", "").toString()
                     val shape = properties.getOrDefault("shape", "ellipse").toString()
                     val color = properties.getOrDefault("color", "lightblue").toString()
+                    println("name: $name  color: $color")
                     if (name.isEmpty() ) return@forEach
                     if (name.contains("UNION")){
                         dotRepresentation.append("  \"${name}\" [shape=$shape, fillcolor=\"$color\", style=\"filled\"];\n")
