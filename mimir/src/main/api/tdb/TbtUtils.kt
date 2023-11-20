@@ -1,6 +1,7 @@
 package api.tdb
 
 import org.apache.jena.query.Query;
+import org.apache.jena.query.Syntax
 import org.apache.jena.query.QueryFactory;
 import org.apache.jena.sparql.syntax.Element;
 import org.apache.jena.sparql.syntax.Element1;
@@ -15,10 +16,10 @@ import org.apache.jena.sparql.expr.ExprList
 import org.apache.jena.sparql.expr.Expr
 import org.apache.jena.sparql.expr.ExprVar
 import org.apache.jena.sparql.expr.NodeValue
-import org.apache.jena.sparql.expr.ExprFunction1
-import org.apache.jena.sparql.expr.ExprFunction2
-import org.apache.jena.sparql.expr.ExprFunctionN
 import org.apache.jena.sparql.expr.ExprAggregator
+import org.apache.jena.sparql.util.ExprUtils
+import org.apache.jena.sparql.core.TriplePath
+import org.apache.jena.sparql.syntax.ElementTriplesBlock
 // import Hashing
 import com.google.common.hash.Hashing;
 
@@ -26,6 +27,7 @@ import com.google.common.hash.Hashing;
 import dot.DOTLang
 import loadModel
 import kotlin.text.substring
+import kotlin.collections.mutableMapOf
 
 
 var union_count:Int = 0;
@@ -133,9 +135,9 @@ fun processQueryPattern(element: Element, nodeIds: MutableList<MutableMap<String
         is ElementFilter -> {
             // determine if element is a FILTER or a FILTER NOT EXISTS
             if(element.toString().contains("NOT EXISTS")){
-                processFilterNotExists(element, nodeIds, dotRepresentation, condList, follow_up)
+                processFilterNotExists(element, nodeIds, condList, follow_up)
             }else{
-                processFilter(element, nodeIds, dotRepresentation, condList, follow_up)
+                processFilter(element, nodeIds,condList)
             }
             
         } 
@@ -143,14 +145,8 @@ fun processQueryPattern(element: Element, nodeIds: MutableList<MutableMap<String
 }
 
 fun processFilter(element: ElementFilter, nodeIds: MutableList<MutableMap<String,MutableMap<String, String> > >, 
-                dotRepresentation: MutableList<MutableList<Triple<String, String, String>>>, 
-                condList: MutableList<MutableList<MutableMap<String, String>>>,
-                follow_up: MutableList<Element>? = mutableListOf()) {
-    
-    println("filter")
-    
+                condList: MutableList<MutableList<MutableMap<String, String>>>) {
     val expr = element.getExpr()
-    println(expr)
     processExpr(expr, nodeIds, condList)
 }
 
@@ -185,7 +181,16 @@ fun processExpr(expr: Expr, nodeIds: MutableList<MutableMap<String,MutableMap<St
                     )
                 }
                 else -> {
-                    expr.args.forEach { arg -> processExpr(arg, nodeIds, condList) }
+                    expr.args.forEach { arg -> run{
+                        processExpr(arg, nodeIds, condList)
+                        condList[union_count].add(
+                            mutableMapOf(
+                                "function" to func, "subject" to arg.toString(),
+                                "predicate" to "", "object" to func,
+                                "card" to "n-ary", "type" to "filter"
+                            )
+                        )
+                    } }
                 }
             }
         }
@@ -200,54 +205,85 @@ fun processExpr(expr: Expr, nodeIds: MutableList<MutableMap<String,MutableMap<St
             // Handle constant expressions
             println("Constant: ${expr}")
             var const_name = expr.toString()
-            val name = const_name.substringAfterLast('/')
-            val color = if (name.length > 0 && name[0] == '_') "#9054cc" else "lightblue"
+            val name = const_name.substringAfterLast('/', "LITERAL")
+            val color: String;
+            if (name != "LITERAL") {
+                if (name[0] == '_'){
+                    color = "#9054cc" // purple
+                } else {
+                    color = "lightblue"
+                }
+            } else {
+                color = "#00ff00"
+            }
             nodeIds[union_count].getOrPut(const_name, {mutableMapOf("name" to const_name, "shape" to "ellipse", "color" to color, "draw" to "true")}  )
         } 
     }
 }
 
 
-fun processFilterNotExists(element: ElementFilter, nodeIds: MutableList<MutableMap<String,MutableMap<String, String> > >, 
-                dotRepresentation: MutableList<MutableList<Triple<String, String, String>>>, 
-                condList: MutableList<MutableList<MutableMap<String, String>>>,
-                follow_up: MutableList<Element>? = mutableListOf()) {
-    println("filter not exists")
 
+
+fun processFilterNotExists(element: ElementFilter, nodeIds: MutableList<MutableMap<String,MutableMap<String, String> > >, 
+                condList: MutableList<MutableList<MutableMap<String, String>>>) {
     // access elements from inside the FILTER
-    val filter = element.getExpr()
-    when (filter) {
-        is ExprFunction -> {
-            // Handle function expressions
-            val funcExpr = filter 
-            println("Function expression: " + funcExpr.functionIRI)
+    val filter = element.getExpr() // (notexists (bgp (triple ?s ?p ?o) ... ))
+    var filter_str = filter.toString().substringAfter("bgp", "ERROR ").dropLast(2).trimIndent() // get the filter's graph
     
-            // Get the arguments of the function
-            val args = funcExpr.args
-            for (arg in args) {
-                println("Argument: $arg")
-                // Process individual arguments as needed
+    val elements : MutableList<Triple<String, String, String>> = mutableListOf()
+    var filter_triples = filter_str.split("(triple")
+    //println(filter_triples)
+    filter_triples.forEach { pattern -> 
+        if (pattern.isNotBlank()) {
+            var parts = pattern.trim().split(" ")
+            if (parts.size == 1) {
+                return@forEach
             }
-        }
-        is ExprVar -> {
-            // Handle variable expressions
-            val varExpr = filter 
-            println("Variable expression: $varExpr")
-            // Process variable as needed
-        }
-        is NodeValue -> {
-            // Handle constant expressions
-            val constExpr = filter
-            println("Constant expression: $constExpr")
-            // Process constant value as needed
-        }
-        else -> {
-            // Handle other types of expressions as required
-            println("Other expression type")
+            var subject = parts[0].trim()
+            var predicate = parts[1].trim()
+            var obj = parts[2].trimEnd(')')
+
+            val triple = Triple(subject, predicate, obj)
+            elements.add(triple)
         }
     }
+    processNotExistsExpr(elements, nodeIds, condList)
 }
 
+fun processNotExistsExpr(elements: MutableList<Triple<String, String, String>>, 
+            nodeIds: MutableList<MutableMap<String,MutableMap<String, String> > >, 
+            condList: MutableList<MutableList<MutableMap<String, String>>>) {
+    println("process not exists expr")
+    println(elements)
+    for (triple in elements){
+        val subject = triple.first
+        val predicate = triple.second
+        val obj = triple.third
+
+        // Assign node values to subjects and objects
+        var subject_name = subject.toString() 
+        
+        var scolor = "red"
+        var obj_name = obj.toString() 
+        
+        var ocolor = "red"
+        //println("    subject: $subject_name [$scolor | ${subject_name.substring(0,1)}]\n    object: $obj [$ocolor | ${subject_name.substring(0,1)}]] ")
+        val label = if (predicate.toString() != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") predicate else "rdf:type"
+
+        nodeIds[union_count].getOrPut(subject_name, {mutableMapOf("name" to subject_name, "shape" to "ellipse", "color" to scolor, "draw" to "true")}  )
+        nodeIds[union_count].getOrPut(obj_name, {mutableMapOf("name" to obj_name, "shape" to "ellipse", "color" to ocolor, "draw" to "true")}  )
+        
+        
+        // Add DOT representation for the edge
+        condList[union_count].add(
+            mutableMapOf(
+                "function" to "notexists", "subject" to subject_name,
+                "predicate" to label, "object" to obj_name,
+                "card" to "binary", "type" to "notExists"
+            )
+        )
+    }
+}
 
 fun sparqlPatternToDot(queryString: String): String {
     union_count = 0
@@ -318,6 +354,8 @@ fun sparqlPatternToDot(queryString: String): String {
                         val func = condFunc!!.substringBefore("_", "ERROR")
                         cond.append("  \"${condSubject}_${i}\" -> \"${condObject}_${i}\" [label=\"${func}\", color=\"lightgreen\"];\n")
                     }
+                } else if (condType == "notExists") {
+                    cond.append("  \"${condSubject}_${i}\" -> \"${condObject}_${i}\" [label=\"${condPredicate}\", color=\"red\"];\n")
                 }
                 dotRepresentation.append(cond.toString())
             }
