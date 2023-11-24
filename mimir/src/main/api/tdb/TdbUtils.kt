@@ -62,55 +62,9 @@ fun processQueryPattern(element: Element, nodeIds: MutableList<MutableMap<String
             }
             var optional_count = 1
             for(pair in optionals){
-
-                val optional_pattern = pair.second
-                //println("optional pattern: $optional_pattern")
-                val optional_idx = pair.first
-                val optional_range = "${start_idx}..${optional_idx + optional_count}"
-                val optional_name = "OPTIONAL_${optional_range}"
-
-                val optional_graph = mutableListOf<Triple<String, String, String>>() // graph shape
-                val optional_conds = mutableListOf<MutableMap<String, String>>()    // graph conditions
-                val optional_nodeIds = mutableMapOf<String, MutableMap<String, String>>()      // graph nodes
-                
-
-                union_count += 1
-                nodeIds.add(optional_nodeIds)
-                condList.add(optional_conds)
-                dotRepresentation.add(optional_graph)
-                
-
-                processQueryPattern(optional_pattern, nodeIds, dotRepresentation, condList)
-                
-
-                // update the optional graph's nodeIds with information of the current graph
-                // such that only nodes that are in the optional graph receive previously
-                // known information
-                for (node in nodeIds[union_count-1]) {
-                    if (node.key in nodeIds[union_count]) {
-                        nodeIds[union_count][node.key] = node.value
-                    }
-                }
-                
-                // add optional node to graph
-                for (node in nodeIds[union_count]) {
-                    val optional_triple = Triple(optional_name, "optional", node.key )
-                    dotRepresentation[union_count].add(optional_triple)
-                }
-                nodeIds[union_count].getOrPut(optional_name, {mutableMapOf("name" to optional_name, "shape" to "diamond", "color" to "pink", "draw" to "true")}  )
-                
-
-                // swap the optional graph with the current graph
-                val temp_graph = dotRepresentation[union_count-1]
-                dotRepresentation[union_count-1] = dotRepresentation[union_count]
-                dotRepresentation[union_count] = temp_graph
-                val tem_cond = condList[union_count-1]
-                condList[union_count-1] = condList[union_count]
-                condList[union_count] = tem_cond
-                val temp_nodes = nodeIds[union_count-1]
-                nodeIds[union_count-1] = nodeIds[union_count]
-                nodeIds[union_count] = temp_nodes
-
+                val serie = Triple(start_idx, pair.first, optional_count)
+                val serialized_optional = Pair(serie, pair.second)
+                processOptionalGraph(serialized_optional, nodeIds, dotRepresentation, condList)
                 optional_count += 1
             }
             return null
@@ -237,6 +191,9 @@ fun processExpr(expr: Expr, nodeIds: MutableList<MutableMap<String,MutableMap<St
                 1 -> {
                     val arg = expr.args[0]
                     processExpr(arg, nodeIds, condList)
+                    if (expr.getOpName() == null){
+                        return 
+                    }
                     condList[union_count].add(
                         mutableMapOf(
                         "function" to func, "subject" to arg.toString(), 
@@ -309,9 +266,6 @@ fun processExpr(expr: Expr, nodeIds: MutableList<MutableMap<String,MutableMap<St
     }
 }
 
-
-
-
 fun processFilterNotExists(element: ElementFilter, nodeIds: MutableList<MutableMap<String,MutableMap<String, String> > >, 
                 condList: MutableList<MutableList<MutableMap<String, String>>>) {
     // access elements from inside the FILTER
@@ -371,6 +325,62 @@ fun processNotExistsExpr(elements: MutableList<Triple<String, String, String>>,
             )
         )
     }
+}
+
+fun processOptionalGraph(pair: Pair<Triple<Int, Int, Int>, Element>, 
+                        nodeIds: MutableList<MutableMap<String,MutableMap<String, String> > >, 
+                        dotRepresentation: MutableList<MutableList<Triple<String, String, String>>>, 
+                        condList: MutableList<MutableList<MutableMap<String, String>>>) {
+    
+    val serie_numbers = pair.first
+    val optional_pattern = pair.second 
+    val start_idx = serie_numbers.first
+    val optional_idx = serie_numbers.second
+    val optional_count = serie_numbers.third
+    val optional_range = "${start_idx}..${optional_idx + optional_count}"
+    val optional_name = "OPTIONAL_${optional_range}"
+
+    val optional_graph = mutableListOf<Triple<String, String, String>>() // graph shape
+    val optional_conds = mutableListOf<MutableMap<String, String>>()    // graph conditions
+    val optional_nodeIds = mutableMapOf<String, MutableMap<String, String>>()      // graph nodes
+    
+
+    union_count += 1
+    nodeIds.add(optional_nodeIds)
+    condList.add(optional_conds)
+    dotRepresentation.add(optional_graph)
+    
+
+    processQueryPattern(optional_pattern, nodeIds, dotRepresentation, condList)
+    
+
+    // update the optional graph's nodeIds with information of the current graph
+    // such that only nodes that are in the optional graph receive previously
+    // known information
+    for (node in nodeIds[union_count-1]) {
+        if (node.key in nodeIds[union_count]) {
+            nodeIds[union_count][node.key] = node.value
+        }
+    }
+    
+    // add optional node to graph
+    for (node in nodeIds[union_count]) {
+        val optional_triple = Triple(optional_name, "optional", node.key )
+        dotRepresentation[union_count].add(optional_triple)
+    }
+    nodeIds[union_count].getOrPut(optional_name, {mutableMapOf("name" to optional_name, "shape" to "diamond", "color" to "pink", "draw" to "true")}  )
+    
+
+    // swap the optional graph with the current graph
+    val temp_graph = dotRepresentation[union_count-1]
+    dotRepresentation[union_count-1] = dotRepresentation[union_count]
+    dotRepresentation[union_count] = temp_graph
+    val tem_cond = condList[union_count-1]
+    condList[union_count-1] = condList[union_count]
+    condList[union_count] = tem_cond
+    val temp_nodes = nodeIds[union_count-1]
+    nodeIds[union_count-1] = nodeIds[union_count]
+    nodeIds[union_count] = temp_nodes
 }
 
 fun sparqlPatternToDot(queryString: String): String {
