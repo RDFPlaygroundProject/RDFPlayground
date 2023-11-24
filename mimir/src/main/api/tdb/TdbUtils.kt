@@ -250,13 +250,23 @@ fun processExpr(expr: Expr, nodeIds: MutableList<MutableMap<String,MutableMap<St
                     val arg2 = expr.args[1]
                     processExpr(arg1, nodeIds, condList)
                     processExpr(arg2, nodeIds, condList)
+                    val arg1_name = arg1.toString()
+                    val arg2_name = arg2.toString()
                     condList[union_count].add(
                         mutableMapOf(
-                        "function" to func, "subject" to arg1.toString(),
-                        "predicate" to func, "object" to arg2.toString(), 
+                        "function" to func, "subject" to arg1_name,
+                        "predicate" to func, "object" to arg2_name, 
                         "card" to "binary", "type" to "filter"
                         )
                     )
+                    if (!nodeIds[union_count].containsKey(arg1_name)){
+                        nodeIds[union_count].getOrPut(arg1_name, {
+                            mutableMapOf("name" to arg1_name, "shape" to "box", "color" to "lightgreen", "draw" to "true")}  )
+                    }
+                    if (!nodeIds[union_count].containsKey(arg2_name)){
+                        nodeIds[union_count].getOrPut(arg2_name, {
+                            mutableMapOf("name" to arg2_name, "shape" to "box", "color" to "lightgreen", "draw" to "true")}  )
+                    }
                 }
                 else -> {
                     expr.args.forEach { arg -> run{
