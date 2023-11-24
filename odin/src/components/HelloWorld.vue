@@ -1368,7 +1368,7 @@
             if (this.sparql_format_selected === 'Query') {  //Nuestro caso
 
               response.text().then(content => {
-                this.result_text = "Cambie a venta de graficos";  //content.text;
+                this.result_text = content;  //content.text;
 
                 this.result_dot = parseDOTNetwork(content);
                 this.sparql_run_loading = false;
