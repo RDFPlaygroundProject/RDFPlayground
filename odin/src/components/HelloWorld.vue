@@ -915,7 +915,7 @@
             class="primary py-2 text-center white--text"
             cols="12"
           >
-            RDF Playground © {{ new Date().getFullYear() }} — <strong>Bastián Inostroza, Raúl Cid</strong>
+            RDF Playground © {{ new Date().getFullYear() }} — <strong>Bastián Inostroza, Raúl Cid, Pablo Jaramillo, Rodrigo Iturrieta, Giuliano Celedón</strong>
           </v-col>
         </v-row>
       </v-footer>
