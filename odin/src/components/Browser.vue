@@ -419,7 +419,7 @@ export default {
       }
 
       // Send URL to API
-      fetch('/api/model/browse', {
+      fetch('http://localhost:9060/api/model/browse', {
         method: 'POST',
         headers: new Headers({
           'Content-Type': 'application/json',

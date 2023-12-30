@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@egjs/hammerjs": "^2.0.17",
+    "@vue/runtime-dom": "^3.3.8",
     "core-js": "^3.6.5",
     "keycharm": "^0.3.1",
     "moment": "^2.25.3",

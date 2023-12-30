@@ -915,7 +915,7 @@
             class="primary py-2 text-center white--text"
             cols="12"
           >
-            RDF Playground © {{ new Date().getFullYear() }} — <strong>Bastián Inostroza, Raúl Cid</strong>
+            RDF Playground © {{ new Date().getFullYear() }} — <strong>Bastián Inostroza, Raúl Cid, Pablo Jaramillo, Rodrigo Iturrieta, Giuliano Celedón</strong>
           </v-col>
         </v-row>
       </v-footer>
@@ -945,7 +945,8 @@
       "TSV": "text/tab-separated-values ;charset=utf-8",
       "TTL": "text/turtle ;charset=utf-8",
       "NTRIPLES": "application/n-triples ;charset=utf-8",
-      "DOT": "text/vnd.graphviz ;charset=utf-8"
+      "DOT": "text/vnd.graphviz ;charset=utf-8",
+      "Query": "text/plain ;charset=utf-8"
   };
 
   // definitions for DOT graph, according to https://forum.vuejs.org/t/vue-cli-webpack-how-to-install-vis/5729
@@ -996,7 +997,7 @@
           "PREFIX rdfs:    <http://www.w3.org/2000/01/rdf-schema#>\n" +
           "\n" +
           "SELECT * WHERE {?s ?p ?o} LIMIT 10",
-      sparql_operation_type: ['ASK', 'CONSTRUCT', 'DESCRIBE', 'SELECT'],
+      sparql_operation_type: ['ASK', 'CONSTRUCT', 'DESCRIBE', 'SELECT', 'VIEW'],
       sparql_tdb_operation_type: ['ASK', 'CONSTRUCT', 'DESCRIBE', 'SELECT', 'INPUT', 'DELETE', 'LOAD', 'CLEAR'],
       sparql_operation_selected: "",
       sparql_format_selected: "",
@@ -1346,6 +1347,7 @@
           query: this.sparql_text.toString(),
           query_response_lang: this.sparql_format_selected
         };
+
         fetch(`/api/tdb/query_model`, {
           method: 'POST',
           headers: new Headers({
@@ -1362,26 +1364,38 @@
             this.sparql_run_loading = false;
           }
           else {
-            response.text().then(bodyText => {
-              this.result_text = bodyText;
-              this.result_icon = "mdi-database-search";
-              this.result_origin = "SPARQL";
-              this.sparql_run_loading = false;
 
-              // Try to display the DOT version if applicable
-              if (this.sparql_operation_selected === 'CONSTRUCT'
-                || this.sparql_operation_selected === 'DESCRIBE'
-              ) {
-                if (this.sparql_format_selected === 'DOT') {
-                  // Result Text is DOT and we can use that
-                  this.result_dot = parseDOTNetwork(this.result_text);
-                  this.sparql_run_loading = false;
-                } else {
-                  // Fetch DOT version from backend
-                  this.dotFetchResult(this.result_text, this.sparql_format_selected);
+            if (this.sparql_format_selected === 'Query') {  //Nuestro caso
+
+              response.text().then(content => {
+                this.result_text = content;  //content.text;
+
+                this.result_dot = parseDOTNetwork(content);
+                this.sparql_run_loading = false;
+              })
+              
+            } else {  //resto de casos
+              response.text().then(bodyText => {
+                this.result_text = bodyText;
+                this.result_icon = "mdi-database-search";
+                this.result_origin = "SPARQL";
+                this.sparql_run_loading = false;
+  
+                // Try to display the DOT version if applicable
+                if (this.sparql_operation_selected === 'CONSTRUCT'
+                  || this.sparql_operation_selected === 'DESCRIBE'
+                ) {
+                  if (this.sparql_format_selected === 'DOT') {
+                    // Result Text is DOT and we can use that
+                    this.result_dot = parseDOTNetwork(this.result_text);
+                    this.sparql_run_loading = false;
+                  } else {
+                    // Fetch DOT version from backend
+                    this.dotFetchResult(this.result_text, this.sparql_format_selected);
+                  }
                 }
-              }
-            });
+              });
+            }
           }
         }).catch(reason => {
           this.sparqlShowAlert(reason);
@@ -1467,6 +1481,8 @@
           this.sparql_results_format = ['Text'];
         } else if (type === 'LOAD' || type === 'CLEAR') {
           this.sparql_results_format = ['Text'];
+        } else if (type === 'VIEW') {
+          this.sparql_results_format = ['Query'];
         }
       },
       sparqlFieldReset: function () {

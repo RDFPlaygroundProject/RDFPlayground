@@ -12,15 +12,23 @@ import org.apache.jena.riot.RDFFormat
 import org.apache.jena.riot.RDFLanguages
 import java.io.ByteArrayOutputStream
 
+import org.apache.jena.query.Query;
+import org.apache.jena.query.QueryFactory;
+import org.apache.commons.lang3.mutable.Mutable
+import com.google.common.hash.Hashing;
+
+
 import dot.DOTLang
 import loadModel
+import kotlin.collections.mutableListOf
+import kotlin.io.println
 
 data class SyntaxCheckRequest(val data: String = "", val data_lang: String = "TTL")
 data class SyntaxCheckResponse(val syntax_error: String = "", val data_dot: String = "")
 
 @RestController
 class SyntaxCheckController {
-
+    var union_count = 0;
     @PostMapping(
         "/api/model/syntax_check",
         consumes = [MediaType.APPLICATION_JSON_UTF8_VALUE],
@@ -49,10 +57,13 @@ class SyntaxCheckController {
         try {
             // write to DOT
             RDFDataMgr.write(modelOnDOT, model, RDFFormat(DOTLang)) // Writes DOT to modelOnDOT
+
         } catch (e: Exception) {
             return ResponseEntity(SyntaxCheckResponse(syntax_error = e.message.toString()), HttpStatus.INTERNAL_SERVER_ERROR)
         }
-
-        return ResponseEntity(SyntaxCheckResponse(data_dot =  modelOnDOT.toString()), HttpStatus.OK)
+        return ResponseEntity(SyntaxCheckResponse(data_dot = modelOnDOT.toString() ), HttpStatus.OK)
     }
+
+
 }
+
