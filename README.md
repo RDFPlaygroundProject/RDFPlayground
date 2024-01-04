@@ -109,10 +109,10 @@ sudo docker image list
 
 Where you should see the `rdf-playground` image listed.
 
-Next we need to run a Docker container for RDF Playground. Here we assume that we want to map between port `80` of the container to port `80` of the `localhost` of the machine running Docker (the first `80` is the port of the machine; the second `80` is the port of the container). We also assume that we want to restart RDF Playground if for any reason it is not running with the `always` option ([see more options](https://docs.docker.com/config/containers/start-containers-automatically/)).
+Next we need to run a Docker container for RDF Playground. Here we assume that we want to map between port `80` of the container for the front-end to port `80` of the `localhost` of the machine running Docker (the first `80` is the port of the machine; the second `80` is the port of the container) and port `9060` of the container for the back-end to port `9060` of the `localhost` of the machine. We also assume that we want to restart RDF Playground if for any reason it is not running with the `always` option ([see more options](https://docs.docker.com/config/containers/start-containers-automatically/)).
 
 ```sh
-docker run -dp 127.0.0.1:80:80 --restart always rdf-playground
+docker run -d -p 127.0.0.1:80:80 -p 127.0.0.1:9060:9060 --restart always rdf-playground
 ```
 
 You should now see the container running with:
