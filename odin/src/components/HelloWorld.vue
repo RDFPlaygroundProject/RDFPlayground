@@ -320,7 +320,7 @@
             </v-card-title>
 
             <v-card-text class="pt-5">
-              Use <a href="http://prefix.cc" target="PrefixCC">prefix.cc</a> service to look for common prefixes.
+              Use <a href="https://prefix.cc" target="PrefixCC">prefix.cc</a> service to look for common prefixes.
               <v-row>
                 <v-col cols="6">
                   <v-text-field
@@ -1189,7 +1189,7 @@
       prefixLookUp: function () {
         this.prefixcc_loading = true;
         let format = this.prefixcc_format_selected.toLowerCase();
-        fetch(`http://prefix.cc/`+this.prefixcc_term+`.file.`+format, {
+        fetch(`https://prefix.cc/`+this.prefixcc_term+`.file.`+format, {
             method: 'GET'
         }
         ).then(response => {
